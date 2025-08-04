@@ -1,0 +1,37 @@
+{
+  "name": "sample-e-commerce",
+  "version": "1.0.0",
+  "description": "Full-stack e-commerce application with Node.js/Express backend and React frontend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && PORT=5005 npm start",
+    "build": "npm run server:build && npm run client:build",
+    "server:build": "cd server && npm run build",
+    "client:build": "cd client && npm run build",
+    "test": "npm run server:test && npm run client:test",
+    "server:test": "cd server && npm test",
+    "client:test": "cd client && npm test -- --coverage --watchAll=false",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "clean": "rm -rf node_modules server/node_modules client/node_modules server/dist client/build",
+    "lint": "concurrently \"cd server && npm run lint\" \"cd client && npm run lint\"",
+    "setup": "npm run install:all && echo 'Setup complete! Run npm run dev to start the application.'"
+  },
+  "keywords": [
+    "ecommerce",
+    "nodejs",
+    "react",
+    "typescript",
+    "express",
+    "fullstack"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
