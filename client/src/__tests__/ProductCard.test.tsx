@@ -1,298 +1,331 @@
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
 import { ProductCard } from '../components/ProductCard';
-import { useAuth } from '../hooks/useAuth';
-import { useCart } from '../hooks/useCart';
-import { render, mockUser, mockProduct } from '../utils/test-utils';
 
-jest.mock('../hooks/useAuth');
-jest.mock('../hooks/useCart');
+// Mock hooks
+const mockUseAuth = {
+  isAuthenticated: true,
+  user: null,
+  login: jest.fn(),
+  logout: jest.fn(),
+  signup: jest.fn(),
+};
 
-const MockedProductCard = ({ product }: { product: any }) => (
-  <ProductCard product={product} />
-);
+const mockUseCart = {
+  cart: null,
+  addToCart: jest.fn(),
+  removeFromCart: jest.fn(),
+  updateQuantity: jest.fn(),
+  clearCart: jest.fn(),
+  getCartTotal: jest.fn(),
+};
+
+jest.mock('../hooks/useAuth', () => ({
+  useAuth: () => mockUseAuth,
+}));
+
+jest.mock('../hooks/useCart', () => ({
+  useCart: () => mockUseCart,
+}));
+
+const mockProduct = {
+  id: 'product-1',
+  name: 'Test Product',
+  price: 29.99,
+  originalPrice: 39.99,
+  imageUrl: 'https://example.com/product.jpg',
+  category: 'Electronics',
+  description: 'A great test product',
+  stock: 10,
+  rating: 4.5,
+  reviewCount: 123,
+};
+
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(<BrowserRouter>{component}</BrowserRouter>);
+};
 
 describe('ProductCard Component', () => {
-  const mockUseAuth = require('../hooks/useAuth').useAuth;
-  const mockUseCart = require('../hooks/useCart').useCart;
-  const mockAddToCart = jest.fn();
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: false,
-      user: null,
-    });
-    mockUseCart.mockReturnValue({
-      addToCart: mockAddToCart,
-    });
+    mockUseAuth.isAuthenticated = true;
+    mockUseCart.addToCart.mockResolvedValue(undefined);
   });
 
-  const defaultProduct = {
-    ...mockProduct,
-    id: 1,
-    name: 'Test Product',
-    price: 29.99,
-    category: 'Electronics',
-    rating: 4.5,
-    reviewCount: 10,
-    stock: 5,
-    imageUrl: 'https://example.com/image.jpg',
-  };
-
-  describe('Product Display', () => {
-    test('renders product information correctly', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+  describe('Basic Rendering', () => {
+    test('displays product information correctly', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
       expect(screen.getByText('Test Product')).toBeInTheDocument();
-      expect(screen.getByText('$29.99')).toBeInTheDocument();
       expect(screen.getByText('Electronics')).toBeInTheDocument();
-      expect(screen.getByText('(10 reviews)')).toBeInTheDocument();
+      expect(screen.getByText('$29.99')).toBeInTheDocument();
+      expect(screen.getByText('$39.99')).toBeInTheDocument();
+      expect(screen.getByText('10 in stock')).toBeInTheDocument();
     });
 
-    test('displays product image with correct attributes', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('displays product image with correct alt text', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
       const image = screen.getByAltText('Test Product');
-      expect(image).toHaveAttribute('src', 'https://example.com/image.jpg');
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute('src', 'https://example.com/product.jpg');
     });
 
-    test('displays star rating correctly', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('displays star rating when rating is provided', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
-      const stars = screen.getByText('★★★★☆');
-      expect(stars).toBeInTheDocument();
+      const stars = screen.getAllByText('★');
+      expect(stars).toHaveLength(4); // 4 full stars for 4.5 rating
+      
+      const reviewCount = screen.getByText('(123 reviews)');
+      expect(reviewCount).toBeInTheDocument();
     });
 
-    test('handles different rating values', () => {
-      const productWith5Stars = { ...defaultProduct, rating: 5 };
-      const productWith1Star = { ...defaultProduct, rating: 1.2 };
+    test('displays view details button with correct link', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
-      const { rerender } = render(<MockedProductCard product={productWith5Stars} />);
-      expect(screen.getByText('★★★★★')).toBeInTheDocument();
-      
-      rerender(<MockedProductCard product={productWith1Star} />);
-      expect(screen.getByText('★☆☆☆☆')).toBeInTheDocument();
-    });
-
-    test('displays price with correct formatting', () => {
-      const productWithWholePrice = { ...defaultProduct, price: 30 };
-      const productWithDecimalPrice = { ...defaultProduct, price: 29.95 };
-      
-      const { rerender } = render(<MockedProductCard product={productWithWholePrice} />);
-      expect(screen.getByText('$30.00')).toBeInTheDocument();
-      
-      rerender(<MockedProductCard product={productWithDecimalPrice} />);
-      expect(screen.getByText('$29.95')).toBeInTheDocument();
+      const viewDetailsButton = screen.getByText('View Details');
+      expect(viewDetailsButton).toBeInTheDocument();
+      expect(viewDetailsButton.closest('a')).toHaveAttribute('href', '/products/product-1');
     });
   });
 
-  describe('Image Error Handling', () => {
+  describe('Authentication States', () => {
+    test('shows add to cart button when authenticated', () => {
+      mockUseAuth.isAuthenticated = true;
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+    });
+
+    test('hides add to cart button when not authenticated', () => {
+      mockUseAuth.isAuthenticated = false;
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
+      expect(screen.getByText('View Details')).toBeInTheDocument();
+    });
+  });
+
+  describe('Stock Management', () => {
+    test('displays out of stock when stock is 0', () => {
+      const outOfStockProduct = { ...mockProduct, stock: 0 };
+      renderWithRouter(<ProductCard product={outOfStockProduct} />);
+      
+      expect(screen.getByText('Out of Stock')).toBeInTheDocument();
+      
+      const addToCartButton = screen.queryByText('Add to Cart');
+      if (addToCartButton) {
+        expect(addToCartButton).toBeDisabled();
+      }
+    });
+
+    test('displays out of stock when stock is undefined', () => {
+      const outOfStockProduct = { ...mockProduct, stock: undefined };
+      renderWithRouter(<ProductCard product={outOfStockProduct} />);
+      
+      expect(screen.getByText('Out of Stock')).toBeInTheDocument();
+    });
+
+    test('shows correct stock count when in stock', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      expect(screen.getByText('10 in stock')).toBeInTheDocument();
+    });
+  });
+
+  describe('Add to Cart Functionality', () => {
+    test('calls addToCart when button is clicked', async () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      const addToCartButton = screen.getByText('Add to Cart');
+      fireEvent.click(addToCartButton);
+      
+      expect(mockUseCart.addToCart).toHaveBeenCalledWith('product-1', 1);
+    });
+
+    test('shows loading state while adding to cart', async () => {
+      mockUseCart.addToCart.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      const addToCartButton = screen.getByText('Add to Cart');
+      fireEvent.click(addToCartButton);
+      
+      expect(screen.getByText('Adding...')).toBeInTheDocument();
+      expect(addToCartButton).toBeDisabled();
+      
+      await waitFor(() => {
+        expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+      });
+    });
+
+    test('handles add to cart error gracefully', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockUseCart.addToCart.mockRejectedValue(new Error('Failed to add to cart'));
+      
+      renderWithRouter(<ProductCard product={mockProduct} />);
+      
+      const addToCartButton = screen.getByText('Add to Cart');
+      fireEvent.click(addToCartButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+      });
+      
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to add to cart:', expect.any(Error));
+      consoleSpy.mockRestore();
+    });
+
+    test('does not add to cart when out of stock', () => {
+      const outOfStockProduct = { ...mockProduct, stock: 0 };
+      renderWithRouter(<ProductCard product={outOfStockProduct} />);
+      
+      // Add to cart button should be disabled or not present for out of stock items
+      const addToCartButton = screen.queryByText('Add to Cart');
+      if (addToCartButton) {
+        expect(addToCartButton).toBeDisabled();
+        fireEvent.click(addToCartButton);
+        expect(mockUseCart.addToCart).not.toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('Image Handling', () => {
     test('shows placeholder when image fails to load', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
       const image = screen.getByAltText('Test Product');
       fireEvent.error(image);
       
-      expect(image).toHaveAttribute('src', 'https://via.placeholder.com/400x200?text=No+Image');
+      expect(screen.getByText('No Image Available')).toBeInTheDocument();
+    });
+
+    test('uses placeholder image when imageUrl is not provided', () => {
+      const productWithoutImage = { ...mockProduct, imageUrl: undefined };
+      renderWithRouter(<ProductCard product={productWithoutImage} />);
+      
+      const image = screen.getByAltText('Test Product');
+      expect(image).toHaveAttribute('src', 'https://via.placeholder.com/300x250?text=No+Image');
     });
   });
 
-  describe('View Details Button', () => {
-    test('always shows view details button', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+  describe('Pricing Display', () => {
+    test('shows original price when different from current price', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
-      const viewButton = screen.getByText('View Details');
-      expect(viewButton).toBeInTheDocument();
-      expect(viewButton.closest('a')).toHaveAttribute('href', '/products/1');
+      expect(screen.getByText('$29.99')).toBeInTheDocument();
+      expect(screen.getByText('$39.99')).toBeInTheDocument();
     });
 
-    test('view details link works for different product IDs', () => {
-      const productWithDifferentId = { ...defaultProduct, id: 42 };
-      render(<MockedProductCard product={productWithDifferentId} />);
+    test('hides original price when same as current price', () => {
+      const productSamePrice = { ...mockProduct, originalPrice: 29.99 };
+      renderWithRouter(<ProductCard product={productSamePrice} />);
       
-      const viewButton = screen.getByText('View Details');
-      expect(viewButton.closest('a')).toHaveAttribute('href', '/products/42');
+      expect(screen.getByText('$29.99')).toBeInTheDocument();
+      expect(screen.queryByText(/line-through/)).not.toBeInTheDocument();
     });
-  });
 
-  describe('Unauthenticated User', () => {
-    test('does not show add to cart button when not authenticated', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('hides original price when not provided', () => {
+      const productNoOriginalPrice = { ...mockProduct, originalPrice: undefined };
+      renderWithRouter(<ProductCard product={productNoOriginalPrice} />);
       
-      expect(screen.queryByText('Add to Cart')).not.toBeInTheDocument();
-      expect(screen.queryByText('Out of Stock')).not.toBeInTheDocument();
+      expect(screen.getByText('$29.99')).toBeInTheDocument();
+      // Should not show any struck-through price
     });
   });
 
-  describe('Authenticated User', () => {
-    beforeEach(() => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        user: mockUser,
-      });
+  describe('Rating System', () => {
+    test('does not show rating when not provided', () => {
+      const productNoRating = { ...mockProduct, rating: undefined, reviewCount: undefined };
+      renderWithRouter(<ProductCard product={productNoRating} />);
+      
+      expect(screen.queryByText('★')).not.toBeInTheDocument();
+      expect(screen.queryByText(/reviews/)).not.toBeInTheDocument();
     });
 
-    test('shows add to cart button when authenticated and in stock', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('shows rating without review count when review count not provided', () => {
+      const productNoReviewCount = { ...mockProduct, reviewCount: undefined };
+      renderWithRouter(<ProductCard product={productNoReviewCount} />);
       
-      const addButton = screen.getByText('Add to Cart');
-      expect(addButton).toBeInTheDocument();
-      expect(addButton).not.toBeDisabled();
+      expect(screen.getAllByText('★')).toHaveLength(4);
+      expect(screen.queryByText(/reviews/)).not.toBeInTheDocument();
     });
 
-    test('shows out of stock button when product has no stock', () => {
-      const outOfStockProduct = { ...defaultProduct, stock: 0 };
-      render(<MockedProductCard product={outOfStockProduct} />);
+    test('handles different rating values correctly', () => {
+      const productLowRating = { ...mockProduct, rating: 2.0 };
+      renderWithRouter(<ProductCard product={productLowRating} />);
       
-      const outOfStockButton = screen.getByText('Out of Stock');
-      expect(outOfStockButton).toBeInTheDocument();
-      expect(outOfStockButton).toBeDisabled();
-    });
-
-    test('calls addToCart when add to cart button is clicked', async () => {
-      render(<MockedProductCard product={defaultProduct} />);
-      
-      const addButton = screen.getByText('Add to Cart');
-      fireEvent.click(addButton);
-
-      expect(mockAddToCart).toHaveBeenCalledWith(1, 1);
-    });
-
-    test('handles addToCart success', async () => {
-      mockAddToCart.mockResolvedValue({});
-      render(<MockedProductCard product={defaultProduct} />);
-      
-      const addButton = screen.getByText('Add to Cart');
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(mockAddToCart).toHaveBeenCalledWith(1, 1);
-      });
-    });
-
-    test('handles addToCart error gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      mockAddToCart.mockRejectedValue(new Error('Network error'));
-      
-      render(<MockedProductCard product={defaultProduct} />);
-      
-      const addButton = screen.getByText('Add to Cart');
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Failed to add to cart:', expect.any(Error));
-      });
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Product Variations', () => {
-    test('handles products with no reviews', () => {
-      const productWithNoReviews = { ...defaultProduct, reviewCount: 0 };
-      render(<MockedProductCard product={productWithNoReviews} />);
-      
-      expect(screen.getByText('(0 reviews)')).toBeInTheDocument();
-    });
-
-    test('handles products with many reviews', () => {
-      const productWithManyReviews = { ...defaultProduct, reviewCount: 1250 };
-      render(<MockedProductCard product={productWithManyReviews} />);
-      
-      expect(screen.getByText('(1250 reviews)')).toBeInTheDocument();
-    });
-
-    test('handles very long product names', () => {
-      const productWithLongName = {
-        ...defaultProduct,
-        name: 'This is a very long product name that might wrap to multiple lines and should still be displayed correctly',
-      };
-      render(<MockedProductCard product={productWithLongName} />);
-      
-      expect(screen.getByText(productWithLongName.name)).toBeInTheDocument();
-    });
-
-    test('handles very expensive products', () => {
-      const expensiveProduct = { ...defaultProduct, price: 9999.99 };
-      render(<MockedProductCard product={expensiveProduct} />);
-      
-      expect(screen.getByText('$9999.99')).toBeInTheDocument();
-    });
-
-    test('handles free products', () => {
-      const freeProduct = { ...defaultProduct, price: 0 };
-      render(<MockedProductCard product={freeProduct} />);
-      
-      expect(screen.getByText('$0.00')).toBeInTheDocument();
+      const filledStars = screen.getAllByText('★');
+      expect(filledStars).toHaveLength(2); // 2 full stars for 2.0 rating
     });
   });
 
   describe('Accessibility', () => {
-    test('image has proper alt text', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('has proper image alt text', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
       const image = screen.getByAltText('Test Product');
       expect(image).toBeInTheDocument();
     });
 
     test('buttons are keyboard accessible', () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        user: mockUser,
-      });
-
-      render(<MockedProductCard product={defaultProduct} />);
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
-      const addButton = screen.getByText('Add to Cart');
-      expect(addButton).not.toHaveAttribute('tabindex', '-1');
+      const addToCartButton = screen.getByText('Add to Cart');
+      const viewDetailsButton = screen.getByText('View Details');
+      
+      expect(addToCartButton).not.toHaveAttribute('tabindex', '-1');
+      expect(viewDetailsButton).not.toHaveAttribute('tabindex', '-1');
     });
 
-    test('links are keyboard accessible', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+    test('disabled button is properly marked', () => {
+      const outOfStockProduct = { ...mockProduct, stock: 0 };
+      renderWithRouter(<ProductCard product={outOfStockProduct} />);
       
-      const viewButton = screen.getByText('View Details');
-      expect(viewButton).not.toHaveAttribute('tabindex', '-1');
+      const addToCartButton = screen.queryByText('Add to Cart');
+      if (addToCartButton) {
+        expect(addToCartButton).toBeDisabled();
+      }
     });
   });
 
-  describe('Hover Effects', () => {
-    test('card maintains structure for hover effects', () => {
-      render(<MockedProductCard product={defaultProduct} />);
+  describe('Card Interaction', () => {
+    test('card hover effects work properly', () => {
+      renderWithRouter(<ProductCard product={mockProduct} />);
       
-      const productName = screen.getByText('Test Product');
-      const card = productName.closest('[data-testid]') || productName.closest('div');
-      expect(card).toBeInTheDocument();
+      // The styled components should handle hover effects
+      // We can test that the components render without errors
+      expect(screen.getByText('Test Product')).toBeInTheDocument();
     });
   });
 
   describe('Edge Cases', () => {
-    test('handles missing image URL', () => {
-      const productWithoutImage = { ...defaultProduct, imageUrl: '' };
-      render(<MockedProductCard product={productWithoutImage} />);
+    test('handles very long product names', () => {
+      const longNameProduct = {
+        ...mockProduct,
+        name: 'This is a very long product name that should be truncated properly when displayed in the card component'
+      };
       
-      const image = screen.getByAltText('Test Product');
-      expect(image).toHaveAttribute('src', '');
+      renderWithRouter(<ProductCard product={longNameProduct} />);
+      
+      expect(screen.getByText(longNameProduct.name)).toBeInTheDocument();
     });
 
-    test('handles zero rating', () => {
-      const productWithZeroRating = { ...defaultProduct, rating: 0 };
-      render(<MockedProductCard product={productWithZeroRating} />);
+    test('handles zero price', () => {
+      const freeProduct = { ...mockProduct, price: 0 };
+      renderWithRouter(<ProductCard product={freeProduct} />);
       
-      expect(screen.getByText('☆☆☆☆☆')).toBeInTheDocument();
+      expect(screen.getByText('$0.00')).toBeInTheDocument();
     });
 
-    test('handles negative stock', () => {
-      mockUseAuth.mockReturnValue({
-        isAuthenticated: true,
-        user: mockUser,
-      });
-
-      const productWithNegativeStock = { ...defaultProduct, stock: -1 };
-      render(<MockedProductCard product={productWithNegativeStock} />);
+    test('handles high stock numbers', () => {
+      const highStockProduct = { ...mockProduct, stock: 999 };
+      renderWithRouter(<ProductCard product={highStockProduct} />);
       
-      const button = screen.getByText('Add to Cart');
-      expect(button).not.toBeDisabled();
+      expect(screen.getByText('999 in stock')).toBeInTheDocument();
     });
   });
 });

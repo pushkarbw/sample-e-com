@@ -1,0 +1,72 @@
+[
+  {
+    "id": "product-1",
+    "name": "Wireless Headphones",
+    "price": 199.99,
+    "category": "Electronics",
+    "stock": 10
+  },
+  {
+    "id": "product-2",
+    "name": "Bluetooth Speaker",
+    "price": 89.99,
+    "category": "Electronics",
+    "stock": 25
+  },
+  {
+    "id": "product-3",
+    "name": "Smartphone Case",
+    "price": 15.99,
+    "category": "Accessories",
+    "stock": 100
+  },
+  {
+    "id": "product-4",
+    "name": "Laptop Stand",
+    "price": 45.50,
+    "category": "Accessories",
+    "stock": 75
+  },
+  {
+    "id": "product-5",
+    "name": "Wireless Mouse",
+    "price": 25.00,
+    "category": "Accessories",
+    "stock": 50
+  },
+  {
+    "id": "product-6",
+    "name": "Mechanical Keyboard",
+    "price": 120.00,
+    "category": "Accessories",
+    "stock": 30
+  },
+  {
+    "id": "product-7",
+    "name": "USB-C Hub",
+    "price": 35.00,
+    "category": "Accessories",
+    "stock": 60
+  },
+  {
+    "id": "product-8",
+    "name": "HDMI Cable",
+    "price": 10.00,
+    "category": "Accessories",
+    "stock": 200
+  },
+  {
+    "id": "product-9",
+    "name": "Portable Charger",
+    "price": 40.00,
+    "category": "Electronics",
+    "stock": 80
+  },
+  {
+    "id": "product-10",
+    "name": "Smartwatch",
+    "price": 250.00,
+    "category": "Electronics",
+    "stock": 20
+  }
+]

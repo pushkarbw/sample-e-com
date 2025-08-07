@@ -195,7 +195,7 @@ const Products: React.FC = () => {
   };
 
   return (
-    <Container>
+    <Container role="main" data-testid="products-container">
       <Header>
         <Title>Products</Title>
         <Filters>

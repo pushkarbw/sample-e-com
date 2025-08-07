@@ -27,7 +27,7 @@ const sessionStorageMock = {
 global.sessionStorage = sessionStorageMock;
 
 // Mock window.location
-delete (window as any).location;
+delete window.location;
 window.location = {
   ...window.location,
   href: 'http://localhost:3000',

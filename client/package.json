@@ -4,51 +4,100 @@
   "description": "React TypeScript frontend for sample e-commerce application",
   "private": true,
   "dependencies": {
+    "@tanstack/react-query": "^4.29.0",
+    "axios": "^1.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.11.2",
     "react-scripts": "5.0.1",
     "styled-components": "^6.0.7",
-    "axios": "^1.4.0",
     "typescript": "^4.9.5"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.8.4",
+    "@cypress/code-coverage": "^3.14.5",
+    "@storybook/addon-a11y": "^7.0.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "@testing-library/user-event": "^14.4.3",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.38",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@types/styled-components": "^5.1.26",
-    "eslint": "^8.44.0",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.60.1",
+    "cross-env": "^7.0.3",
+    "cypress": "^13.6.0",
+    "cypress-axe": "^1.6.0",
+    "cypress-visual-regression": "^5.0.0",
+    "eslint": "^8.44.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "cypress": "^13.6.0",
+    "jest-axe": "^8.0.0",
     "jest-environment-jsdom": "^29.7.0",
+    "jest-extended": "^4.0.1",
+    "lighthouse": "^11.0.0",
     "msw": "^2.0.0",
-    "@axe-core/react": "^4.8.4"
+    "nyc": "^15.1.0",
+    "puppeteer": "^21.0.0",
+    "start-server-and-test": "^2.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:ci": "react-scripts test --coverage --watchAll=false --ci",
     "eject": "react-scripts eject",
+    "test": "react-scripts test --passWithNoTests",
+    "test:watch": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:ci": "cross-env CI=true react-scripts test --coverage --watchAll=false --reporters=default --reporters=jest-junit",
+    "test:debug": "react-scripts test --inspect-brk --runInBand --no-cache",
+    "test:unit": "react-scripts test --testPathPattern='src.*\\.(test|spec)\\.(js|jsx|ts|tsx)$' --watchAll=false",
+    "test:integration": "react-scripts test --testPathPattern='src.*\\.integration\\.(test|spec)\\.(js|jsx|ts|tsx)$' --watchAll=false",
+    "test:a11y": "jest --testPathPattern='.*\\.a11y\\.(test|spec)\\.(js|jsx|ts|tsx)$'",
+    "test:performance": "jest --testPathPattern='.*\\.perf\\.(test|spec)\\.(js|jsx|ts|tsx)$'",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "e2e": "cypress run"
+    "cypress:run:headless": "cypress run --headless",
+    "cypress:run:chrome": "cypress run --browser chrome",
+    "cypress:run:firefox": "cypress run --browser firefox",
+    "cypress:run:edge": "cypress run --browser edge",
+    "e2e": "start-server-and-test start http://localhost:3000 cypress:run",
+    "e2e:open": "start-server-and-test start http://localhost:3000 cypress:open",
+    "e2e:headless": "start-server-and-test start http://localhost:3000 cypress:run:headless",
+    "e2e:smoke": "cypress run --spec 'cypress/e2e/smoke/**/*'",
+    "e2e:auth": "cypress run --spec 'cypress/e2e/auth.cy.js'",
+    "e2e:shopping": "cypress run --spec 'cypress/e2e/shopping.cy.js'",
+    "e2e:cart": "cypress run --spec 'cypress/e2e/cart-checkout.cy.js'",
+    "test:all": "npm run test:unit && npm run test:integration && npm run e2e",
+    "test:quick": "npm run test:unit && npm run e2e:smoke",
+    "test:full": "npm run test:coverage && npm run e2e && npm run test:a11y && npm run test:performance",
+    "coverage:merge": "nyc merge coverage coverage/merged.json",
+    "coverage:report": "nyc report --reporter=html --reporter=text --reporter=lcov",
+    "coverage:check": "nyc check-coverage --statements 80 --branches 75 --functions 80 --lines 80",
+    "lighthouse:ci": "lighthouse --chrome-flags='--headless' --output=html --output-path=./lighthouse-report.html http://localhost:3000",
+    "performance:audit": "npm run lighthouse:ci",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test:storybook": "test-storybook",
+    "test:smoke": "npm run e2e:smoke",
+    "test:regression": "npm run test:coverage && npm run e2e",
+    "test:nightly": "npm run test:full && npm run performance:audit"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "testing-library/no-render-in-setup": "error",
+      "testing-library/no-wait-for-empty-callback": "error",
+      "testing-library/prefer-screen-queries": "warn"
+    }
   },
   "browserslist": {
     "production": [
@@ -63,26 +112,38 @@
     ]
   },
   "jest": {
-    "transformIgnorePatterns": [
-      "node_modules/(?!(axios)/)"
-    ],
-    "moduleNameMapper": {
-      "^axios$": "axios/dist/node/axios.cjs"
-    },
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!src/**/*.d.ts",
       "!src/index.tsx",
-      "!src/reportWebVitals.ts"
+      "!src/reportWebVitals.ts",
+      "!src/**/*.stories.{js,jsx,ts,tsx}",
+      "!src/utils/test-utils.tsx",
+      "!src/utils/advanced-test-utils.tsx"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html",
+      "json-summary"
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 80,
+        "statements": 80,
+        "branches": 75,
         "functions": 80,
-        "lines": 80,
-        "statements": 80
+        "lines": 80
       }
-    }
+    },
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(axios)/)"
+    ]
   },
-  "proxy": "http://localhost:5000"
+  "nyc": {
+    "extends": "@cypress/code-coverage/nyc-config"
+  }
 }

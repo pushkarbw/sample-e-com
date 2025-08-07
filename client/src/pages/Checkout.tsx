@@ -247,8 +247,9 @@ const Checkout: React.FC = () => {
             <SectionTitle>Shipping Address</SectionTitle>
             <Form onSubmit={handleSubmit}>
               <FormGroup>
-                <Label>Street Address</Label>
+                <Label htmlFor="street">Street Address</Label>
                 <Input
+                  id="street"
                   type="text"
                   value={shippingAddress.street}
                   onChange={(e) => handleAddressChange('street', e.target.value)}
@@ -258,8 +259,9 @@ const Checkout: React.FC = () => {
               
               <FormRow>
                 <FormGroup>
-                  <Label>City</Label>
+                  <Label htmlFor="city">City</Label>
                   <Input
+                    id="city"
                     type="text"
                     value={shippingAddress.city}
                     onChange={(e) => handleAddressChange('city', e.target.value)}
@@ -268,8 +270,9 @@ const Checkout: React.FC = () => {
                 </FormGroup>
                 
                 <FormGroup>
-                  <Label>State</Label>
+                  <Label htmlFor="state">State</Label>
                   <Input
+                    id="state"
                     type="text"
                     value={shippingAddress.state}
                     onChange={(e) => handleAddressChange('state', e.target.value)}
@@ -280,8 +283,9 @@ const Checkout: React.FC = () => {
               
               <FormRow>
                 <FormGroup>
-                  <Label>ZIP Code</Label>
+                  <Label htmlFor="zipCode">ZIP Code</Label>
                   <Input
+                    id="zipCode"
                     type="text"
                     value={shippingAddress.zipCode}
                     onChange={(e) => handleAddressChange('zipCode', e.target.value)}
@@ -290,8 +294,9 @@ const Checkout: React.FC = () => {
                 </FormGroup>
                 
                 <FormGroup>
-                  <Label>Country</Label>
+                  <Label htmlFor="country">Country</Label>
                   <Select
+                    id="country"
                     value={shippingAddress.country}
                     onChange={(e) => handleAddressChange('country', e.target.value)}
                     required
@@ -308,8 +313,9 @@ const Checkout: React.FC = () => {
           <Section>
             <SectionTitle>Payment Method</SectionTitle>
             <FormGroup>
-              <Label>Payment Type</Label>
+              <Label htmlFor="paymentMethod">Payment Type</Label>
               <Select
+                id="paymentMethod"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 required
