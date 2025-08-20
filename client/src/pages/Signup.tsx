@@ -155,6 +155,7 @@ const Signup: React.FC = () => {
             onChange={handleChange}
             required
             autoComplete="given-name"
+            data-testid="firstName-input"
           />
         </FormGroup>
 
@@ -168,6 +169,7 @@ const Signup: React.FC = () => {
             onChange={handleChange}
             required
             autoComplete="family-name"
+            data-testid="lastName-input"
           />
         </FormGroup>
 
@@ -181,6 +183,7 @@ const Signup: React.FC = () => {
             onChange={handleChange}
             required
             autoComplete="email"
+            data-testid="email-input"
           />
         </FormGroup>
 
@@ -195,10 +198,11 @@ const Signup: React.FC = () => {
             required
             minLength={6}
             autoComplete="new-password"
+            data-testid="password-input"
           />
         </FormGroup>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} data-testid="signup-button">
           {loading ? 'Creating Account...' : 'Create Account'}
         </Button>
       </Form>

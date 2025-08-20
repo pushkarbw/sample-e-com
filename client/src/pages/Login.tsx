@@ -137,7 +137,7 @@ const Login: React.FC = () => {
     <Container>
       <Title>Login</Title>
       
-      {error && <ErrorMessage>{error}</ErrorMessage>}
+      {error && <ErrorMessage data-cy="error-message">{error}</ErrorMessage>}
       
       <Form onSubmit={handleSubmit}>
         <FormGroup>
@@ -150,6 +150,7 @@ const Login: React.FC = () => {
             onChange={handleChange}
             required
             autoComplete="email"
+            data-testid="email-input"
           />
         </FormGroup>
 
@@ -163,10 +164,11 @@ const Login: React.FC = () => {
             onChange={handleChange}
             required
             autoComplete="current-password"
+            data-testid="password-input"
           />
         </FormGroup>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} data-testid="login-button">
           {loading ? 'Logging in...' : 'Login'}
         </Button>
       </Form>

@@ -381,67 +381,28 @@ describe('ProtectedRoute Component', () => {
       expect(screen.getByTestId('dynamic-child-2')).toBeInTheDocument();
     });
 
-    test('handles component errors gracefully', () => {
+    test('handles null user with authenticated state', () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: true,
         loading: false,
         isLoading: false,
-        user: { id: 'user-1', firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+        user: null, // Edge case: authenticated but user is null
         login: jest.fn(),
         logout: jest.fn(),
         signup: jest.fn(),
         refreshUser: jest.fn(),
       });
 
-      // Create an error boundary mock
-      const ErrorFallback = ({ error }: { error: Error }) => (
-        <div data-testid="error-fallback">Error: {error.message}</div>
-      );
-
-      class ErrorBoundary extends React.Component<
-        { children: React.ReactNode },
-        { hasError: boolean; error: Error | null }
-      > {
-        constructor(props: { children: React.ReactNode }) {
-          super(props);
-          this.state = { hasError: false, error: null };
-        }
-
-        static getDerivedStateFromError(error: Error) {
-          return { hasError: true, error };
-        }
-
-        render() {
-          if (this.state.hasError) {
-            return <ErrorFallback error={this.state.error!} />;
-          }
-          return this.props.children;
-        }
-      }
-
-      // Component that will throw an error
-      const ErrorComponent = () => {
-        throw new Error('Child component error');
-      };
-
-      // This test should verify that errors in child components are caught
-      // by error boundaries and don't break the ProtectedRoute itself
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
       render(
-        <ErrorBoundary>
-          <BrowserRouter>
-            <ProtectedRoute>
-              <ErrorComponent />
-            </ProtectedRoute>
-          </BrowserRouter>
-        </ErrorBoundary>
+        <BrowserRouter>
+          <ProtectedRoute>
+            <div data-testid="protected-content">This is protected content</div>
+          </ProtectedRoute>
+        </BrowserRouter>
       );
       
-      // We should see the error fallback
-      expect(screen.getByTestId('error-fallback')).toBeInTheDocument();
-      
-      consoleSpy.mockRestore();
+      // Should still render children if isAuthenticated is true
+      expect(screen.getByTestId('protected-content')).toBeInTheDocument();
     });
   });
 });

@@ -1,16 +1,77 @@
-[
-  {
-    "id": "product-1",
-    "name": "Wireless Headphones",
-    "price": 199.99,
-    "category": "Electronics",
-    "stock": 10
-  },
-  {
-    "id": "product-2",
-    "name": "Bluetooth Speaker",
-    "price": 89.99,
-    "category": "Electronics",
-    "stock": 5
+{
+  "data": [
+    {
+      "id": "1",
+      "name": "Premium Wireless Headphones",
+      "description": "High-quality wireless headphones with noise cancellation and premium sound quality.",
+      "price": 199.99,
+      "category": "Electronics",
+      "stock": 15,
+      "imageUrl": "/images/headphones.jpg",
+      "images": ["/images/headphones-1.jpg", "/images/headphones-2.jpg"],
+      "rating": 4.5,
+      "reviewCount": 128,
+      "features": ["Noise Cancellation", "Bluetooth 5.0", "30-hour battery"]
+    },
+    {
+      "id": "2",
+      "name": "Portable Bluetooth Speaker",
+      "description": "Compact and powerful bluetooth speaker with crystal clear sound.",
+      "price": 89.99,
+      "category": "Electronics",
+      "stock": 8,
+      "imageUrl": "/images/speaker.jpg",
+      "images": ["/images/speaker-1.jpg", "/images/speaker-2.jpg"],
+      "rating": 4.2,
+      "reviewCount": 89,
+      "features": ["Waterproof", "12-hour battery", "360° sound"]
+    },
+    {
+      "id": "3",
+      "name": "Smart Fitness Watch",
+      "description": "Advanced fitness tracking with heart rate monitoring and GPS.",
+      "price": 299.99,
+      "category": "Wearables",
+      "stock": 12,
+      "imageUrl": "/images/smartwatch.jpg",
+      "images": ["/images/watch-1.jpg", "/images/watch-2.jpg"],
+      "rating": 4.7,
+      "reviewCount": 203,
+      "features": ["GPS", "Heart Rate Monitor", "Sleep Tracking"]
+    },
+    {
+      "id": "4",
+      "name": "Laptop Computer",
+      "description": "High-performance laptop perfect for work and gaming.",
+      "price": 1299.99,
+      "category": "Computers",
+      "stock": 5,
+      "imageUrl": "/images/laptop.jpg",
+      "images": ["/images/laptop-1.jpg", "/images/laptop-2.jpg"],
+      "rating": 4.6,
+      "reviewCount": 156,
+      "features": ["Intel i7", "16GB RAM", "512GB SSD"]
+    },
+    {
+      "id": "5",
+      "name": "Running Shoes",
+      "description": "Comfortable running shoes with advanced cushioning technology.",
+      "price": 129.99,
+      "category": "Sports",
+      "stock": 20,
+      "imageUrl": "/images/shoes.jpg",
+      "images": ["/images/shoes-1.jpg", "/images/shoes-2.jpg"],
+      "rating": 4.3,
+      "reviewCount": 95,
+      "features": ["Breathable mesh", "Shock absorption", "Lightweight"]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "totalPages": 1,
+    "totalItems": 5,
+    "limit": 12,
+    "hasNext": false,
+    "hasPrev": false
   }
-]
+}

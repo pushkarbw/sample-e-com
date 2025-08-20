@@ -250,6 +250,7 @@ const Checkout: React.FC = () => {
                 <Label htmlFor="street">Street Address</Label>
                 <Input
                   id="street"
+                  data-testid="street-input"
                   type="text"
                   value={shippingAddress.street}
                   onChange={(e) => handleAddressChange('street', e.target.value)}
@@ -262,6 +263,7 @@ const Checkout: React.FC = () => {
                   <Label htmlFor="city">City</Label>
                   <Input
                     id="city"
+                    data-testid="city-input"
                     type="text"
                     value={shippingAddress.city}
                     onChange={(e) => handleAddressChange('city', e.target.value)}
@@ -273,6 +275,7 @@ const Checkout: React.FC = () => {
                   <Label htmlFor="state">State</Label>
                   <Input
                     id="state"
+                    data-testid="state-input"
                     type="text"
                     value={shippingAddress.state}
                     onChange={(e) => handleAddressChange('state', e.target.value)}
@@ -286,6 +289,7 @@ const Checkout: React.FC = () => {
                   <Label htmlFor="zipCode">ZIP Code</Label>
                   <Input
                     id="zipCode"
+                    data-testid="zipcode-input"
                     type="text"
                     value={shippingAddress.zipCode}
                     onChange={(e) => handleAddressChange('zipCode', e.target.value)}
@@ -297,6 +301,7 @@ const Checkout: React.FC = () => {
                   <Label htmlFor="country">Country</Label>
                   <Select
                     id="country"
+                    data-testid="country-select"
                     value={shippingAddress.country}
                     onChange={(e) => handleAddressChange('country', e.target.value)}
                     required
@@ -316,6 +321,7 @@ const Checkout: React.FC = () => {
               <Label htmlFor="paymentMethod">Payment Type</Label>
               <Select
                 id="paymentMethod"
+                data-testid="payment-method-select"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 required
@@ -328,11 +334,11 @@ const Checkout: React.FC = () => {
           </Section>
         </div>
 
-        <OrderSummary>
+        <OrderSummary data-testid="order-summary">
           <SectionTitle>Order Summary</SectionTitle>
           
           {cart.items.map((item) => (
-            <OrderItem key={item.id}>
+            <OrderItem key={item.id} data-testid="order-item">
               <ItemInfo>
                 <h4>{item.product?.name}</h4>
                 <p>Qty: {item.quantity} × ${item.product?.price.toFixed(2)}</p>
@@ -343,7 +349,7 @@ const Checkout: React.FC = () => {
           
           <SummaryRow>
             <span>Subtotal:</span>
-            <span>${cart.totalAmount.toFixed(2)}</span>
+            <span data-testid="order-subtotal">${cart.totalAmount.toFixed(2)}</span>
           </SummaryRow>
           
           <SummaryRow>
@@ -353,17 +359,18 @@ const Checkout: React.FC = () => {
           
           <SummaryRow>
             <span>Tax:</span>
-            <span>${(cart.totalAmount * 0.08).toFixed(2)}</span>
+            <span data-testid="order-tax">${(cart.totalAmount * 0.08).toFixed(2)}</span>
           </SummaryRow>
           
           <SummaryRow className="total">
             <span>Total:</span>
-            <span>${(cart.totalAmount * 1.08).toFixed(2)}</span>
+            <span data-testid="order-total">${(cart.totalAmount * 1.08).toFixed(2)}</span>
           </SummaryRow>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+          {error && <ErrorMessage data-testid="checkout-error">{error}</ErrorMessage>}
           
           <PlaceOrderButton
+            data-testid="place-order-button"
             onClick={handleSubmit}
             disabled={loading}
           >

@@ -14,14 +14,17 @@ jest.mock('../components/ProductCard', () => ({
   ),
 }));
 
-// Mock API client
-const mockApiClient = {
-  getFeaturedProducts: jest.fn(),
-};
-
+// Mock the entire ApiClient class with jest.fn() directly
 jest.mock('../services/apiClient', () => ({
-  default: mockApiClient,
+  __esModule: true,
+  default: {
+    getFeaturedProducts: jest.fn(),
+  },
 }));
+
+// Import the mocked apiClient to get access to the mock
+import apiClient from '../services/apiClient';
+const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
 const mockFeaturedProducts = [
   {

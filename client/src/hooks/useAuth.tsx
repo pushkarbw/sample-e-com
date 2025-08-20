@@ -53,9 +53,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      throw error;
+      
+      // Extract meaningful error message from API response
+      let errorMessage = 'Login failed';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Throw a new error with the meaningful message
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

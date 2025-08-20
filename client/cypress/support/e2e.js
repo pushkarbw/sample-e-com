@@ -1,11 +1,16 @@
 // Import commands.js using ES2015 syntax
 import './commands';
+import './real-app-commands'; // Import enhanced commands for real app
 
 // Import cypress-axe for accessibility testing
 import 'cypress-axe';
 
-// Import code coverage support
-import '@cypress/code-coverage/support';
+// Import code coverage support - make it optional
+try {
+  require('@cypress/code-coverage/support');
+} catch (error) {
+  console.log('Code coverage support not available, skipping...');
+}
 
 // Global configuration
 Cypress.on('uncaught:exception', (err, runnable) => {

@@ -109,18 +109,18 @@ const Header: React.FC = () => {
         <Logo to="/">E-Commerce</Logo>
         
         <NavLinks>
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="/products">Products</NavLink>
+          <NavLink to="/" data-testid="home-link">Home</NavLink>
+          <NavLink to="/products" data-testid="products-link">Products</NavLink>
           
           {isAuthenticated ? (
             <>
-              <CartLink to="/cart">
+              <CartLink to="/cart" data-testid="cart-link">
                 Cart
                 {cart && cart.totalItems > 0 && (
-                  <CartBadge>{cart.totalItems}</CartBadge>
+                  <CartBadge data-testid="cart-badge">{cart.totalItems}</CartBadge>
                 )}
               </CartLink>
-              <NavLink to="/orders">Orders</NavLink>
+              <NavLink to="/orders" data-testid="orders-link">Orders</NavLink>
             </>
           ) : null}
         </NavLinks>
@@ -128,15 +128,19 @@ const Header: React.FC = () => {
         <UserActions>
           {isAuthenticated ? (
             <>
-              <span>Hi, {user?.firstName}!</span>
-              <button className="btn-outline" onClick={handleLogout}>
+              <span data-testid="user-greeting">Hi, {user?.firstName}!</span>
+              <button 
+                className="btn-outline" 
+                data-testid="logout-button"
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <NavLink to="/login">Login</NavLink>
-              <NavLink to="/signup">Sign Up</NavLink>
+              <NavLink to="/login" data-testid="login-link">Login</NavLink>
+              <NavLink to="/signup" data-testid="signup-link">Sign Up</NavLink>
             </>
           )}
         </UserActions>

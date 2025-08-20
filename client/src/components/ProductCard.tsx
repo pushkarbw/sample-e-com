@@ -217,7 +217,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isOutOfStock = !product.stock || product.stock <= 0;
 
   return (
-    <Card>
+    <Card data-testid="product-card">
       <ImageContainer>
         {imageError ? (
           <ImagePlaceholder>No Image Available</ImagePlaceholder>
@@ -231,11 +231,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </ImageContainer>
       
       <CardContent>
-        <ProductTitle>{product.name}</ProductTitle>
+        <ProductTitle data-testid="product-name">{product.name}</ProductTitle>
         <ProductCategory>{product.category}</ProductCategory>
         
         <PriceContainer>
-          <Price>${product.price.toFixed(2)}</Price>
+          <Price data-testid="product-price">${product.price.toFixed(2)}</Price>
           {product.originalPrice && product.originalPrice > product.price && (
             <OriginalPrice>${product.originalPrice.toFixed(2)}</OriginalPrice>
           )}
@@ -259,6 +259,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <ButtonContainer>
           {isAuthenticated && (
             <AddToCartButton
+              data-testid="add-to-cart-button"
               onClick={handleAddToCart}
               disabled={isOutOfStock || isAddingToCart}
             >
@@ -266,7 +267,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </AddToCartButton>
           )}
           
-          <ViewDetailsButton to={`/products/${product.id}`}>
+          <ViewDetailsButton to={`/products/${product.id}`} data-testid="view-details-button">
             View Details
           </ViewDetailsButton>
         </ButtonContainer>

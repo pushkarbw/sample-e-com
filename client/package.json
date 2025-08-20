@@ -5,6 +5,8 @@
   "private": true,
   "dependencies": {
     "@tanstack/react-query": "^4.29.0",
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
     "axios": "^1.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -28,6 +30,7 @@
     "@types/styled-components": "^5.1.26",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.60.1",
+    "browserstack-cypress-cli": "^1.32.8",
     "cross-env": "^7.0.3",
     "cypress": "^13.6.0",
     "cypress-axe": "^1.6.0",
@@ -86,7 +89,15 @@
     "test:storybook": "test-storybook",
     "test:smoke": "npm run e2e:smoke",
     "test:regression": "npm run test:coverage && npm run e2e",
-    "test:nightly": "npm run test:full && npm run performance:audit"
+    "test:nightly": "npm run test:full && npm run performance:audit",
+    "browserstack:init": "npx browserstack-cypress init",
+    "browserstack:run": "npx browserstack-cypress run --sync",
+    "browserstack:run:async": "npx browserstack-cypress run",
+    "browserstack:validate": "npx browserstack-cypress validate",
+    "browserstack:info": "npx browserstack-cypress info",
+    "e2e:browserstack": "npx browserstack-cypress run --sync",
+    "e2e:browserstack:parallel": "npx browserstack-cypress run --sync --parallels 5",
+    "e2e:browserstack:build": "BUILD_NUMBER=$(date +%Y%m%d_%H%M%S) npx browserstack-cypress run --sync"
   },
   "eslintConfig": {
     "extends": [

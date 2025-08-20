@@ -210,9 +210,9 @@ const Cart: React.FC = () => {
     <Container>
       <Title>Shopping Cart ({cart.totalItems} items)</Title>
       
-      <CartItems>
+      <CartItems data-testid="cart-items">
         {cart.items.map((item) => (
-          <CartItem key={item.id}>
+          <CartItem key={item.id} data-testid="cart-item">
             <ProductImage 
               src={item.product?.imageUrl} 
               alt={item.product?.name}
@@ -222,19 +222,21 @@ const Cart: React.FC = () => {
             />
             
             <ProductInfo>
-              <h3>{item.product?.name}</h3>
+              <h3 data-testid="item-name">{item.product?.name}</h3>
               <p>${(item.product?.price || 0).toFixed(2)} each</p>
             </ProductInfo>
             
             <QuantityControls>
               <QuantityButton
+                data-testid="decrease-quantity"
                 onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                 disabled={item.quantity <= 1}
               >
                 -
               </QuantityButton>
-              <Quantity>{item.quantity}</Quantity>
+              <Quantity data-testid="item-quantity">{item.quantity}</Quantity>
               <QuantityButton
+                data-testid="increase-quantity"
                 onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                 disabled={item.quantity >= (item.product?.stock || 0)}
               >
@@ -242,19 +244,19 @@ const Cart: React.FC = () => {
               </QuantityButton>
             </QuantityControls>
             
-            <Price>${(item.subtotal || 0).toFixed(2)}</Price>
+            <Price data-testid="item-price">${(item.subtotal || 0).toFixed(2)}</Price>
             
-            <RemoveButton onClick={() => handleRemoveItem(item.id)}>
+            <RemoveButton data-testid="remove-item" onClick={() => handleRemoveItem(item.id)}>
               Remove
             </RemoveButton>
           </CartItem>
         ))}
       </CartItems>
 
-      <CartSummary>
+      <CartSummary data-testid="cart-summary">
         <SummaryRow>
           <span>Subtotal:</span>
-          <span>${(cart.totalAmount || 0).toFixed(2)}</span>
+          <span data-testid="cart-subtotal">${(cart.totalAmount || 0).toFixed(2)}</span>
         </SummaryRow>
         <SummaryRow>
           <span>Shipping:</span>
@@ -262,12 +264,13 @@ const Cart: React.FC = () => {
         </SummaryRow>
         <SummaryRow>
           <span>Total:</span>
-          <span>${(cart.totalAmount || 0).toFixed(2)}</span>
+          <span data-testid="cart-total">${(cart.totalAmount || 0).toFixed(2)}</span>
         </SummaryRow>
         
         <Actions>
           <button 
             className="btn-secondary" 
+            data-testid="clear-cart"
             onClick={handleClearCart}
           >
             Clear Cart
@@ -280,7 +283,8 @@ const Cart: React.FC = () => {
             Continue Shopping
           </Link>
           <button 
-            className="btn-primary" 
+            className="btn-primary"
+            data-testid="checkout-button"
             onClick={() => navigate('/checkout')}
             style={{ flex: 1 }}
           >
