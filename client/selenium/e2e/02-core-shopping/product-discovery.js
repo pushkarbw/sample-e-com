@@ -28,12 +28,20 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       // Wait for products container to load
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Check if products are loaded (either products exist or "No products found" message)
+      // Check if products are loaded - be more specific about what we expect
       const bodyText = await commands.get('body').then(el => el.getText());
-      expect(
-        bodyText.includes('No products found') || 
-        (await commands.getAll('img[alt]')).length > 0
-      ).to.be.true;
+      const productImages = await commands.getAll('img[alt]');
+      
+      // Either we have products OR we have a proper "no products" message
+      if (productImages.length > 0) {
+        // If we have images, we should also have prices and titles
+        expect(bodyText).to.include('$');
+        const headings = await commands.getAll('h1, h2, h3');
+        expect(headings.length).to.be.greaterThan(0);
+      } else {
+        // If no products, should explicitly say so
+        expect(bodyText.toLowerCase()).to.include('no products');
+      }
     });
 
     it('should handle product search functionality', async function() {
@@ -206,17 +214,27 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('body');
       
-      // Should show error message or handle gracefully
+      // Be more specific about what constitutes proper error handling
       const bodyText = await commands.get('body').then(el => el.getText());
-      expect(
-        bodyText.includes('error') || 
-        bodyText.includes('failed') || 
-        bodyText.includes('unable') ||
-        bodyText.includes('try again') ||
-        bodyText.includes('loading') ||
-        bodyText.includes('$') ||
-        bodyText.includes('No products')
-      ).to.be.true;
+      
+      // Check for actual content or proper error messages, not just any text
+      const hasProducts = bodyText.includes('$') && bodyText.match(/\$\d+/);
+      const hasProperNoProducts = bodyText.toLowerCase().includes('no products') || 
+                                 bodyText.toLowerCase().includes('no items found');
+      const hasProperError = (bodyText.toLowerCase().includes('error') || 
+                             bodyText.toLowerCase().includes('failed')) &&
+                            (bodyText.toLowerCase().includes('try again') || 
+                             bodyText.toLowerCase().includes('reload'));
+      const isStillLoading = bodyText.toLowerCase().includes('loading') || 
+                            bodyText.toLowerCase().includes('please wait');
+      
+      // Must have either valid products, proper no-products message, proper error message, or loading state
+      expect(hasProducts || hasProperNoProducts || hasProperError || isStillLoading).to.be.true;
+      
+      // If none of the above, it's likely broken
+      if (!hasProducts && !hasProperNoProducts && !hasProperError && !isStillLoading) {
+        throw new Error('Products page appears broken - no valid content, error handling, or loading state found');
+      }
     });
 
     it('should make search API calls with correct parameters', async function() {

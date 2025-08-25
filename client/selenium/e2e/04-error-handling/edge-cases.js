@@ -24,9 +24,13 @@ describe('⚠️ Error Handling & Edge Cases', function() {
       // Try to submit empty form
       await commands.click('button[type="submit"]');
       
-      // Should show HTML5 validation or custom validation
+      // Should show HTML5 validation or custom validation - be more specific
       const invalidInputs = await commands.getAll('input:invalid');
       expect(invalidInputs.length).to.be.greaterThan(0);
+      
+      // Should still be on login page
+      const currentUrl = await commands.driver.getCurrentUrl();
+      expect(currentUrl).to.include('/login');
     });
 
     it('should validate email format properly', async function() {
@@ -53,6 +57,10 @@ describe('⚠️ Error Handling & Edge Cases', function() {
         bodyText.toLowerCase().includes('email format');
       
       expect(hasValidationError).to.be.true;
+      
+      // Should not proceed with invalid email
+      const currentUrl = await commands.driver.getCurrentUrl();
+      expect(currentUrl).to.include('/login');
     });
 
     it('should handle password requirements', async function() {

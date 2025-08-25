@@ -1,7 +1,7 @@
 {
     "auth": {
-        "username": "xx",
-        "access_key": "xx"
+        "username": "username",
+        "access_key": "access_key"
     },
     "browsers": [
         {

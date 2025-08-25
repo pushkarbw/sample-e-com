@@ -34,8 +34,16 @@ describe('⚡ Performance & Load Testing', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       const loadTime = Date.now() - startTime;
       
-      expect(loadTime).to.be.lessThan(10000); // 10 seconds max
+      // More realistic performance threshold - 10 seconds was too generous
+      expect(loadTime).to.be.lessThan(5000); // 5 seconds max for products page
       await commands.log(`Products page loaded in ${loadTime}ms`);
+      
+      // Also verify that something meaningful loaded, not just the container
+      const bodyText = await commands.get('body').then(el => el.getText());
+      const hasContent = bodyText.includes('$') || bodyText.toLowerCase().includes('no products');
+      if (!hasContent) {
+        throw new Error(`Products page loaded in ${loadTime}ms but contains no meaningful content`);
+      }
     });
 
     it('should load authentication pages quickly', async function() {

@@ -26,20 +26,37 @@ describe('🔗 API Integration & Backend Communication', function() {
 
   describe('Authentication API', function() {
     it('should handle login API calls', async function() {
+      const newUser = {
+        email: `test-${Date.now()}@example.com`,
+        password: 'SecurePass123!',
+        firstName: 'New',
+        lastName: 'User'
+      };
+      
       await commands.visit('/login');
-      await commands.type('input[type="email"]', testConfig.defaultUser.email);
-      await commands.type('input[type="password"]', testConfig.defaultUser.password);
+      
+      // Fill out login form with flexible selectors
+      await commands.type('input[type="email"], #email', newUser.email);
+      await commands.type('input[type="password"], #password', newUser.password);
+      
       await commands.click('button[type="submit"]');
       
       // Wait for login to complete and verify response
       await commands.wait(3000);
       const currentUrl = await commands.driver.getCurrentUrl();
       
-      // Either successful redirect or stayed on login with error
-      expect(
-        !currentUrl.includes('/login') || 
-        (await commands.get('body').then(el => el.getText())).toLowerCase().includes('error')
-      ).to.be.true;
+      // Be more specific about login failure vs success
+      if (currentUrl.includes('/login')) {
+        // Still on login page - should show error for invalid credentials
+        const bodyText = await commands.get('body').then(el => el.getText());
+        const hasErrorMessage = bodyText.toLowerCase().includes('error') ||
+                               bodyText.toLowerCase().includes('invalid') ||
+                               bodyText.toLowerCase().includes('incorrect');
+        expect(hasErrorMessage).to.be.true;
+      } else {
+        // Redirected away from login - this should NOT happen with invalid credentials
+        throw new Error('Login with invalid credentials succeeded - security issue!');
+      }
     });
 
     it('should handle registration API calls', async function() {

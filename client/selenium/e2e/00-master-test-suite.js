@@ -213,14 +213,34 @@ describe('🏪 E-Commerce Application - Complete Selenium Test Suite', function(
     it('should display cart contents', async function() {
       await commands.visit('/cart');
       await commands.shouldHaveUrl('/cart');
+      
+      // Verify cart page loads
       await commands.shouldBeVisible('body');
       
+      // Look for cart-related elements - be more specific about what constitutes a working cart
       const bodyText = await commands.get('body').then(el => el.getText());
-      expect(
-        bodyText.toLowerCase().includes('cart') || 
-        bodyText.toLowerCase().includes('empty') ||
-        bodyText.toLowerCase().includes('checkout')
-      ).to.be.true;
+      
+      // Check for specific cart functionality, not just any cart-related text
+      const hasCartItems = await commands.getAll('.cart-item, [data-testid*="cart-item"]').then(items => items.length > 0);
+      const hasEmptyCartMessage = bodyText.toLowerCase().includes('empty') && 
+                                 (bodyText.toLowerCase().includes('cart') || bodyText.toLowerCase().includes('no items'));
+      const hasCartTotal = bodyText.includes('$') && 
+                          (bodyText.toLowerCase().includes('total') || bodyText.toLowerCase().includes('subtotal'));
+      const hasCheckoutButton = await commands.getAll('button:contains("Checkout"), a:contains("Checkout")').then(btns => btns.length > 0);
+      
+      // Cart should either have items with totals OR proper empty state
+      if (hasCartItems) {
+        // If there are items, should have total and checkout functionality
+        expect(hasCartTotal || hasCheckoutButton).to.be.true;
+      } else {
+        // If no items, should have proper empty cart message
+        expect(hasEmptyCartMessage).to.be.true;
+      }
+      
+      // Basic cart text without proper structure indicates a broken cart
+      if (!hasCartItems && !hasEmptyCartMessage && !hasCartTotal) {
+        throw new Error('Cart page appears broken - no items, empty state, or cart functionality found');
+      }
     });
   });
 
