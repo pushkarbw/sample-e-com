@@ -159,6 +159,10 @@ const Cart: React.FC = () => {
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     try {
+      // Add random delay to simulate intermittent slow cart updates
+      const updateDelay = Math.floor(Math.random() * 400) + 100; // 100-500ms jitter
+      await new Promise(resolve => setTimeout(resolve, updateDelay));
+      
       await updateCartItem(itemId, newQuantity);
     } catch (error) {
       console.error('Failed to update cart item:', error);
@@ -167,6 +171,10 @@ const Cart: React.FC = () => {
 
   const handleRemoveItem = async (itemId: string) => {
     try {
+      // Add random delay for remove operations
+      const removeDelay = Math.floor(Math.random() * 300) + 50; // 50-350ms jitter
+      await new Promise(resolve => setTimeout(resolve, removeDelay));
+      
       await removeFromCart(itemId);
     } catch (error) {
       console.error('Failed to remove cart item:', error);

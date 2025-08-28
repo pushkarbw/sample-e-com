@@ -252,7 +252,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </RatingContainer>
         )}
         
-        <StockStatus inStock={!isOutOfStock}>
+        <StockStatus inStock={!isOutOfStock} data-testid="stock-status">
           {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
         </StockStatus>
         

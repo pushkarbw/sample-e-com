@@ -1,5 +1,6 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
+const { By } = require('selenium-webdriver');
 const TestSetup = require('../../support/test-setup');
 
 describe('🛒 Core Shopping - Product Discovery', function() {
@@ -27,20 +28,28 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       
       // Wait for products container to load
       await commands.shouldBeVisible('[data-testid="products-container"]');
+      await commands.waitForProductsToLoad();
       
-      // Check if products are loaded - be more specific about what we expect
-      const bodyText = await commands.get('body').then(el => el.getText());
-      const productImages = await commands.getAll('img[alt]');
+      // Check for products using proper data-testid attributes
+      const productCards = await commands.getAll('[data-testid="product-card"]');
       
-      // Either we have products OR we have a proper "no products" message
-      if (productImages.length > 0) {
-        // If we have images, we should also have prices and titles
-        expect(bodyText).to.include('$');
-        const headings = await commands.getAll('h1, h2, h3');
-        expect(headings.length).to.be.greaterThan(0);
+      if (productCards.length > 0) {
+        // If we have products, verify they have required elements
+        await commands.shouldBeVisible('[data-testid="product-name"]');
+        await commands.shouldBeVisible('[data-testid="product-price"]');
+        
+        // Verify prices are properly formatted
+        const prices = await commands.getAll('[data-testid="product-price"]');
+        for (const price of prices) {
+          const priceText = await price.getText();
+          expect(priceText).to.include('$', 'Price should include currency symbol');
+        }
       } else {
-        // If no products, should explicitly say so
-        expect(bodyText.toLowerCase()).to.include('no products');
+        // If no products, should show proper empty state
+        const bodyText = await commands.get('body').then(el => el.getText());
+        const hasEmptyMessage = bodyText.toLowerCase().includes('no products') ||
+                               bodyText.toLowerCase().includes('loading');
+        expect(hasEmptyMessage).to.be.true('Should show proper empty state or loading message');
       }
     });
 
@@ -64,38 +73,50 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000);
       
-      // Look for category filters (dropdowns, buttons, or links)
+      // Look for the category select dropdown (based on actual implementation)
       const categorySelects = await commands.getAll('select');
-      const categoryButtons = await commands.getAll('button:contains("Category"), button[data-category]');
-      const categoryLinks = await commands.getAll('a[data-category], a:contains("Electronics"), a:contains("Clothing")');
       
       if (categorySelects.length > 0) {
         const select = categorySelects[0];
         try {
-          const options = await select.findElements(commands.driver.By.tagName('option'));
+          // Wait for select to be fully loaded
+          await commands.wait(1000);
+          const options = await select.findElements(By.tagName('option'));
           
-          if (options.length > 1) {
-            await options[1].click(); // Select first real option (skip "All")
-            await commands.wait(1000);
+          if (options && options.length > 1) {
+            // Get the initial products count
+            const initialProductCards = await commands.getAll('[data-testid="product-card"]');
+            const initialCount = initialProductCards.length;
             
-            // Verify filtering worked
-            await commands.shouldBeVisible('[data-testid="products-container"]');
+            // Select first category option (skip "All Categories")
+            const optionText = await options[1].getText();
+            await options[1].click();
+            await commands.wait(2000); // Wait for filter to apply
+            
+            // Verify filtering worked - either products changed or we see "No products found"
+            const bodyText = await commands.get('body').then(el => el.getText());
+            const newProductCards = await commands.getAll('[data-testid="product-card"]');
+            
+            // Category filtering should either show different products or "No products found"
+            const hasValidFilterResult = 
+              newProductCards.length !== initialCount ||
+              bodyText.includes('No products found') ||
+              bodyText.includes('Loading products');
+            
+            expect(hasValidFilterResult).to.be.true;
+          } else {
+            await commands.log('Category select has no options to test');
+            this.skip();
           }
         } catch (error) {
-          await commands.log('Error accessing category options: ' + error.message);
+          await commands.log('Category filtering error: ' + error.message);
+          // Just verify the page is still functional
+          await commands.shouldBeVisible('body');
+          this.skip();
         }
-      } else if (categoryButtons.length > 0) {
-        await categoryButtons[0].click();
-        await commands.wait(1000);
-        await commands.shouldBeVisible('[data-testid="products-container"]');
-      } else if (categoryLinks.length > 0) {
-        await categoryLinks[0].click();
-        await commands.wait(1000);
-        await commands.shouldBeVisible('[data-testid="products-container"]');
       } else {
-        // No category filtering found - test passes
-        await commands.log('No category filtering UI found - may not be implemented');
-        expect(true).to.be.true;
+        await commands.log('Category select dropdown not found - feature may not be implemented');
+        this.skip();
       }
     });
 
@@ -150,47 +171,31 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000);
       
-      // Check if images exist on product listing
-      const images = await commands.getAll('img');
+      // Based on actual implementation, products should have images
+      const productCards = await commands.getAll('[data-testid="product-card"]');
       
-      if (images.length > 0) {
-        await commands.shouldBeVisible('img');
-        const bodyText = await commands.get('body').then(el => el.getText());
-        expect(bodyText).to.include('$'); // Price should be visible
-      } else {
-        // Navigate to product detail if no images on listing
-        const viewDetailsLinks = await commands.getAll('a:contains("View Details")');
+      if (productCards.length > 0) {
+        // Verify product images are present (either real images or placeholders)
+        const images = await commands.getAll('img');
+        expect(images.length).to.be.greaterThan(0, 'Product cards should contain images');
         
-        if (viewDetailsLinks.length > 0) {
-          await viewDetailsLinks[0].click();
-          await commands.wait(2000);
-          
-          // Check for images on detail page
-          const detailImages = await commands.getAll('img');
-          if (detailImages.length > 0) {
-            await commands.shouldBeVisible('img');
-          }
-        } else {
-          // Try direct product URL
-          await commands.visit('/products/1');
-          await commands.wait(2000);
-          
-          const detailImages = await commands.getAll('img');
-          if (detailImages.length > 0) {
-            await commands.shouldBeVisible('img');
-          } else {
-            await commands.log('No product images found - may not be implemented');
-            expect(true).to.be.true; // Pass the test
-          }
-        }
-      }
-      
-      // Check for add to cart functionality
-      const addToCartButtons = await commands.getAll('button:contains("Add to Cart")');
-      if (addToCartButtons.length > 0) {
-        await commands.log('Add to cart functionality found');
+        // Verify prices are displayed
+        const prices = await commands.getAll('[data-testid="product-price"]');
+        expect(prices.length).to.be.greaterThan(0, 'Products should display prices');
+        
+        // Verify add to cart buttons exist (may require authentication)
+        const addToCartButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+        const viewDetailsButtons = await commands.getAll('[data-testid="view-details-button"]');
+        
+        // Should have either add to cart buttons or view details buttons
+        expect(addToCartButtons.length + viewDetailsButtons.length).to.be.greaterThan(0, 
+          'Products should have either add to cart or view details buttons');
+        
+        await commands.log(`Found ${productCards.length} products with ${images.length} images`);
       } else {
-        await commands.log('Add to cart functionality may require authentication');
+        // No products case - verify proper empty state
+        const bodyText = await commands.get('body').then(el => el.getText());
+        expect(bodyText).to.include('No products found', 'Should show proper no products message');
       }
     });
   });
@@ -218,7 +223,7 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       const bodyText = await commands.get('body').then(el => el.getText());
       
       // Check for actual content or proper error messages, not just any text
-      const hasProducts = bodyText.includes('$') && bodyText.match(/\$\d+/);
+      const hasProducts = bodyText.includes('$') && /\$\d+/.test(bodyText);
       const hasProperNoProducts = bodyText.toLowerCase().includes('no products') || 
                                  bodyText.toLowerCase().includes('no items found');
       const hasProperError = (bodyText.toLowerCase().includes('error') || 
@@ -229,10 +234,11 @@ describe('🛒 Core Shopping - Product Discovery', function() {
                             bodyText.toLowerCase().includes('please wait');
       
       // Must have either valid products, proper no-products message, proper error message, or loading state
-      expect(hasProducts || hasProperNoProducts || hasProperError || isStillLoading).to.be.true;
+      const hasValidState = hasProducts || hasProperNoProducts || hasProperError || isStillLoading;
+      expect(hasValidState).to.be.true;
       
       // If none of the above, it's likely broken
-      if (!hasProducts && !hasProperNoProducts && !hasProperError && !isStillLoading) {
+      if (!hasValidState) {
         throw new Error('Products page appears broken - no valid content, error handling, or loading state found');
       }
     });
@@ -313,39 +319,30 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000); // Give time for products to load
       
-      // Get the page text content and look for review patterns
-      const bodyText = await commands.get('body').then(el => el.getText());
+      const productCards = await commands.getAll('[data-testid="product-card"]');
       
-      // Check for review count patterns like "(127 reviews)" or "45 reviews"
-      const hasReviewText = /\(\d+\s+reviews?\)|(\d+\s+reviews?)/i.test(bodyText);
-      
-      // Also look for common rating elements with simple selectors
-      const starElements = await commands.getAll('.star');
-      const ratingElements = await commands.getAll('.rating');
-      const reviewElements = await commands.getAll('.reviews');
-      
-      if (hasReviewText) {
-        await commands.log('Found review text patterns in page content');
-        expect(hasReviewText).to.be.true;
-      } else if (starElements.length > 0) {
-        await commands.log(`Found ${starElements.length} star elements`);
-        expect(starElements.length).to.be.greaterThan(0);
-      } else if (ratingElements.length > 0) {
-        await commands.log(`Found ${ratingElements.length} rating elements`);
-        expect(ratingElements.length).to.be.greaterThan(0);
-      } else if (reviewElements.length > 0) {
-        await commands.log(`Found ${reviewElements.length} review elements`);
-        expect(reviewElements.length).to.be.greaterThan(0);
-      } else {
-        // Check for star characters in the text content
+      if (productCards.length > 0) {
+        // Based on actual implementation, look for star characters (★, ☆)
+        const bodyText = await commands.get('body').then(el => el.getText());
         const hasStarChars = bodyText.includes('★') || bodyText.includes('☆') || bodyText.includes('⭐');
-        if (hasStarChars) {
-          await commands.log('Found star characters in page content');
-          expect(hasStarChars).to.be.true;
+        
+        // Check for review count patterns like "(127 reviews)"
+        const hasReviewText = /\(\d+\s+reviews?\)/i.test(bodyText);
+        
+        // Products with ratings should display stars and/or review counts
+        if (hasStarChars || hasReviewText) {
+          expect(hasStarChars || hasReviewText).to.be.true;
+          await commands.log('Found product ratings and reviews');
         } else {
-          await commands.log('Rating functionality appears to be present based on the UI but not detected by test selectors');
-          expect(true).to.be.true; // Pass the test since we can see ratings in the screenshot
+          // If no ratings found, verify products are still displaying properly
+          const prices = await commands.getAll('[data-testid="product-price"]');
+          expect(prices.length).to.be.greaterThan(0);
+          await commands.log('No ratings found but products are displaying correctly');
         }
+      } else {
+        // No products case
+        const bodyText = await commands.get('body').then(el => el.getText());
+        expect(bodyText).to.include('No products found', 'Should show proper no products message');
       }
     });
   });

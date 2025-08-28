@@ -167,10 +167,10 @@ const Home: React.FC = () => {
 
   return (
     <HomeContainer role="main">
-      <HeroSection role="banner">
+      <HeroSection role="banner" data-testid="hero-section">
         <h1>Welcome to Our Store</h1>
         <p>Discover amazing products at great prices</p>
-        <CTAButton to="/products" className="btn-primary">
+        <CTAButton to="/products" className="btn-primary" data-testid="cta-button">
           Shop Now
         </CTAButton>
       </HeroSection>

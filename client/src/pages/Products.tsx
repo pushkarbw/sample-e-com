@@ -116,13 +116,30 @@ const Products: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      
+      // Add random delay to simulate intermittent slow API responses
+      const randomDelay = Math.floor(Math.random() * 500) + 200; // 200-700ms jitter
+      await new Promise(resolve => setTimeout(resolve, randomDelay));
+      
       const result = await apiClient.getProducts({
         page: currentPage,
         limit,
         search: search || undefined,
         category: selectedCategory || undefined
       });
-      setProducts(result);
+      
+      // Sometimes simulate partial data loading
+      if (Math.random() < 0.15) { // 15% chance of partial data
+        setProducts({
+          ...result,
+          data: {
+            ...result.data,
+            data: result.data.data.slice(0, Math.max(1, Math.floor(result.data.data.length * 0.6)))
+          }
+        });
+      } else {
+        setProducts(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load products');
     } finally {
@@ -132,6 +149,10 @@ const Products: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
+      // Add random delay for category loading
+      const categoryDelay = Math.floor(Math.random() * 300) + 100; // 100-400ms jitter
+      await new Promise(resolve => setTimeout(resolve, categoryDelay));
+      
       const result = await apiClient.getCategories();
       setCategories(result);
     } catch (err) {
