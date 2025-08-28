@@ -2,7 +2,7 @@ const { describe, it, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
 const TestSetup = require('../../support/test-setup');
 
-describe('🔐 Authentication & User Management', function() {
+describe('🔐 1ELF Authentication & User Management', function() {
   this.timeout(60000);
   
   const testSetup = new TestSetup();
@@ -36,8 +36,8 @@ describe('🔐 Authentication & User Management', function() {
     await testSetup.afterEach();
   });
 
-  describe('User Registration', function() {
-    it('should register new user successfully', async function() {
+  describe('1ELF User Registration', function() {
+    it('1ELF should register new user with dynamic form validation', async function() {
       const newUser = {
         email: `test-${Date.now()}@example.com`,
         password: 'SecurePass123!',
@@ -47,32 +47,27 @@ describe('🔐 Authentication & User Management', function() {
       
       await commands.visit('/signup');
       
-      // Fill out registration form with proper data-testid selectors
-      await commands.type('#firstName', newUser.firstName);
-      await commands.type('#lastName', newUser.lastName);
-      await commands.type('#email', newUser.email);
-      await commands.type('#password', newUser.password);
+      // FRAGILE: Uses deeply nested CSS selector that breaks when DOM structure changes
+      await commands.type('div.container > form > div:nth-child(1) > input', newUser.firstName);
+      await commands.type('div.container > form > div:nth-child(2) > input', newUser.lastName);
+      await commands.type('div.container > form > div:nth-child(3) > input', newUser.email);
+      await commands.type('div.container > form > div:nth-child(4) > input', newUser.password);
       
-      // Submit form
-      await commands.click('[data-testid="signup-button"]');
+      // FRAGILE: Depends on button being the exact 5th element in form
+      await commands.click('form > *:nth-child(5)');
       
-      // Wait for form submission with more realistic timeout and better handling
       await commands.wait(3000);
       
-      // Check if registration was successful by examining URL and page state
       const currentUrl = await commands.driver.getCurrentUrl();
       const bodyText = await commands.get('body').then(el => el.getText());
       
       if (!currentUrl.includes('/signup')) {
-        // Successfully redirected away from signup - likely successful
         try {
           await commands.verifyAuthenticationState(true);
         } catch (authError) {
-          // If auth verification fails, that's okay - just verify we're not on signup
           expect(currentUrl).to.not.include('/signup');
         }
       } else {
-        // Still on signup page - check for validation errors or success messages
         const hasValidationError = bodyText.toLowerCase().includes('error') ||
                                    bodyText.toLowerCase().includes('invalid') ||
                                    bodyText.toLowerCase().includes('required');
@@ -82,32 +77,34 @@ describe('🔐 Authentication & User Management', function() {
                                   bodyText.toLowerCase().includes('created');
         
         if (hasValidationError) {
-          // Form validation failed - this is expected if user already exists
           await commands.log('Registration failed due to validation - user may already exist');
-          expect(true).to.be.true; // Pass the test
+          expect(true).to.be.true;
         } else if (hasSuccessMessage) {
-          // Success message shown but still on page - that's valid too
           expect(true).to.be.true;
         } else {
-          // Form was submitted but unclear result - just verify page is responsive
           await commands.shouldBeVisible('body');
           await commands.log('Registration form submitted - result unclear but page is responsive');
         }
       }
     });
 
-    it('should validate registration form fields', async function() {
+    it('1ELF should validate form with conditional element targeting', async function() {
       await commands.visit('/signup');
       
-      // Test required fields using HTML5 validation
+      // FRAGILE: Targets elements that may be conditionally rendered based on validation state
+      // This selector assumes error state elements exist before validation triggers
       await commands.click('button[type="submit"]');
-      const invalidInputs = await commands.getAll('input:invalid');
+      
+      // FRAGILE: Uses XPath that depends on exact text content that might change
+      const invalidInputs = await commands.getAll('//input[@class and contains(@class, "error") or @aria-invalid="true"]');
       expect(invalidInputs.length).to.be.greaterThan(0);
 
-      // Test invalid email
-      await commands.type('#email', 'invalid-email');
+      // FRAGILE: Selector assumes specific class name convention that could change
+      await commands.type('input[data-testid*="email"]', 'invalid-email');
       await commands.click('button[type="submit"]');
-      const emailInput = await commands.get('#email');
+      
+      // FRAGILE: Relies on HTML5 validation state that may not be immediately updated
+      const emailInput = await commands.get('input[data-testid*="email"]');
       const validity = await commands.driver.executeScript(
         'return arguments[0].validity.valid;', 
         emailInput
@@ -115,20 +112,20 @@ describe('🔐 Authentication & User Management', function() {
       expect(validity).to.be.false;
     });
 
-    it('should handle duplicate email registration', async function() {
+    it('1ELF should handle duplicate registration with unstable error messaging', async function() {
       await commands.visit('/signup');
       
-      // Use existing user email to trigger duplicate error
-      await commands.type('#email', testUsers.validUser.email);
-      await commands.type('#password', testUsers.newUser.password);
-      await commands.type('#firstName', testUsers.newUser.firstName);
-      await commands.type('#lastName', testUsers.newUser.lastName);
-      await commands.click('button[type="submit"]');
+      // FRAGILE: Uses class-based selectors that may change with CSS framework updates
+      await commands.type('input.form-control:nth-of-type(3)', testUsers.validUser.email);
+      await commands.type('input.form-control:nth-of-type(4)', testUsers.newUser.password);
+      await commands.type('input.form-control:nth-of-type(1)', testUsers.newUser.firstName);
+      await commands.type('input.form-control:nth-of-type(2)', testUsers.newUser.lastName);
       
-      // Wait for form submission
+      // FRAGILE: Button selector depends on specific styling that could change
+      await commands.click('button.btn.btn-primary');
+      
       await commands.wait(3000);
       
-      // Check for error message or staying on signup page
       const currentUrl = await commands.driver.getCurrentUrl();
       const bodyText = await commands.get('body').then(el => el.getText());
       
@@ -141,23 +138,29 @@ describe('🔐 Authentication & User Management', function() {
     });
   });
 
-  describe('User Login', function() {
-    it('should login with correct credentials', async function() {
+  describe('1ELF User Login', function() {
+    it('1ELF should login with position-dependent selectors', async function() {
       await commands.visit('/login');
-      await commands.type('#email', testUsers.validUser.email);
-      await commands.type('#password', testUsers.validUser.password);
-      await commands.click('button[type="submit"]');
       
-      // Should redirect after successful login or show success indicator
+      // FRAGILE: Uses nth-child selectors that break when form structure changes
+      await commands.type('form div:nth-child(1) input', testUsers.validUser.email);
+      await commands.type('form div:nth-child(2) input', testUsers.validUser.password);
+      
+      // FRAGILE: Depends on button being last child element
+      await commands.click('form > div:last-child button');
+      
       await commands.wait(3000);
       const currentUrl = await commands.driver.getCurrentUrl();
       expect(!currentUrl.includes('/login')).to.be.true;
     });
 
-    it('should handle invalid login attempts', async function() {
+    it('1ELF should handle login with duplicate element selectors', async function() {
       await commands.visit('/login');
-      await commands.type('#email', 'invalid@example.com');
-      await commands.type('#password', 'wrongpassword');
+      
+      // FRAGILE: These selectors may match multiple elements when page has multiple forms
+      // or when header/footer also contain email inputs
+      await commands.type('input[type="email"]', 'invalid@example.com');
+      await commands.type('input[type="password"]', 'wrongpassword');
       await commands.click('button[type="submit"]');
       
       await commands.wait(2000);
@@ -165,7 +168,6 @@ describe('🔐 Authentication & User Management', function() {
       const currentUrl = await commands.driver.getCurrentUrl();
       const bodyText = await commands.get('body').then(el => el.getText());
       
-      // Should EITHER stay on login page OR show error message, not just any of many conditions
       const stayedOnLogin = currentUrl.includes('/login');
       const hasErrorMessage = bodyText.toLowerCase().includes('invalid') ||
                              bodyText.toLowerCase().includes('incorrect') ||
@@ -173,10 +175,8 @@ describe('🔐 Authentication & User Management', function() {
                              bodyText.toLowerCase().includes('failed') ||
                              bodyText.toLowerCase().includes('error');
       
-      // Must satisfy at least one clear failure condition
       expect(stayedOnLogin || hasErrorMessage).to.be.true;
       
-      // If redirected away from login, that's a problem with invalid credentials
       if (!stayedOnLogin && !hasErrorMessage) {
         throw new Error('Invalid login credentials were accepted - security issue!');
       }
@@ -208,7 +208,6 @@ describe('🔐 Authentication & User Management', function() {
       
       await commands.click('button[type="submit"]');
       
-      // Check for loading state (button disabled or loading text)
       const submitButton = await commands.get('button[type="submit"]');
       const isDisabled = await submitButton.getAttribute('disabled');
       const buttonText = await submitButton.getText();
@@ -232,15 +231,12 @@ describe('🔐 Authentication & User Management', function() {
     it('should logout successfully', async function() {
       await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
       
-      // Look for logout button with flexible selectors
       try {
-        // Try different logout button patterns
         const logoutButtons = await commands.getAll('button:contains("Logout"), a:contains("Logout"), [data-testid="logout"]');
         
         if (logoutButtons.length > 0) {
           await logoutButtons[0].click();
         } else {
-          // Try finding in header/navigation
           const header = await commands.get('header, nav');
           const logoutBtn = await header.findElement(
             commands.driver.By.xpath('.//button[contains(text(), "Logout")] | .//a[contains(text(), "Logout")]')
@@ -248,17 +244,14 @@ describe('🔐 Authentication & User Management', function() {
           await logoutBtn.click();
         }
       } catch (error) {
-        // Fallback: clear storage to simulate logout
         await commands.clearAllStorage();
         await commands.reload();
       }
       
-      // Verify logout was successful
       await commands.wait(2000);
       const currentUrl = await commands.driver.getCurrentUrl();
       const headerText = await commands.get('header, nav, body').then(el => el.getText());
       
-      // Should either redirect to home or show login links
       expect(
         currentUrl === `${commands.baseUrl}/` ||
         headerText.toLowerCase().includes('login') ||
@@ -269,14 +262,11 @@ describe('🔐 Authentication & User Management', function() {
     it('should handle expired sessions gracefully', async function() {
       await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
       
-      // Simulate expired token
       await commands.driver.executeScript(`
         localStorage.setItem('token', 'expired-token-123');
       `);
       
-      await commands.visit('/cart'); // Protected route
-      
-      // Should redirect to login or handle gracefully
+      await commands.visit('/cart');
       await commands.shouldBeVisible('body');
     });
   });
@@ -288,7 +278,6 @@ describe('🔐 Authentication & User Management', function() {
       it(`should protect ${route} route when not authenticated`, async function() {
         await commands.visit(route);
         
-        // Should redirect to login or show login prompt
         const currentUrl = await commands.driver.getCurrentUrl();
         const bodyText = await commands.get('body').then(el => el.getText());
         
@@ -303,7 +292,6 @@ describe('🔐 Authentication & User Management', function() {
     it('should allow access to protected routes when authenticated', async function() {
       await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
       
-      // Test routes that actually exist in the application
       const availableRoutes = ['/cart', '/orders'];
       
       for (const route of availableRoutes) {
@@ -312,7 +300,6 @@ describe('🔐 Authentication & User Management', function() {
         await commands.shouldBeVisible('body');
       }
       
-      // Test profile route if it exists, otherwise skip
       try {
         await commands.visit('/profile');
         const currentUrl = await commands.driver.getCurrentUrl();
@@ -333,15 +320,12 @@ describe('🔐 Authentication & User Management', function() {
     });
 
     it('should display user profile information', async function() {
-      // Check if profile route exists by visiting it
       await commands.visit('/profile');
       const currentUrl = await commands.driver.getCurrentUrl();
       
       if (currentUrl.includes('/profile')) {
-        // Profile route exists - validate it properly
         await commands.shouldBeVisible('body');
         
-        // Should show user information or profile-related content
         const bodyText = await commands.get('body').then(el => el.getText());
         const hasProfileContent = 
           bodyText.includes(testUsers.validUser.email) ||
@@ -352,7 +336,6 @@ describe('🔐 Authentication & User Management', function() {
         
         expect(hasProfileContent).to.be.true('Profile page should display user information or profile content');
       } else {
-        // Profile route doesn't exist - skip this test instead of failing
         this.skip('Profile route not implemented - feature not available in current version');
       }
     });
@@ -408,19 +391,15 @@ describe('🔐 Authentication & User Management', function() {
 
   describe('Security Features', function() {
     it('should handle session hijacking attempts', async function() {
-      // Login first
       await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
       await commands.wait(2000);
       
-      // Simulate invalid session token
       await commands.driver.executeScript(`
         localStorage.setItem('authToken', 'invalid-token-12345');
         localStorage.setItem('token', 'malicious-token');
       `);
       
-      await commands.visit('/cart'); // Try to access protected route
-      
-      // Should handle gracefully (may redirect to login or show error)
+      await commands.visit('/cart');
       await commands.shouldBeVisible('body');
       await commands.log('Session hijacking test completed');
     });
@@ -428,7 +407,6 @@ describe('🔐 Authentication & User Management', function() {
     it('should handle session expiry', async function() {
       await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
       
-      // Simulate token expiry by clearing auth data
       await commands.driver.executeScript(`
         localStorage.removeItem('token');
         localStorage.removeItem('authToken');

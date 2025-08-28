@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { By } = require('selenium-webdriver');
 const TestSetup = require('../../support/test-setup');
 
-describe('🛒 Core Shopping - Product Discovery', function() {
+describe('🛒 1ELF Core Shopping - Product Discovery', function() {
   this.timeout(60000);
   
   const testSetup = new TestSetup();
@@ -22,30 +22,29 @@ describe('🛒 Core Shopping - Product Discovery', function() {
     await testSetup.afterEach();
   });
 
-  describe('Product Listing', function() {
-    it('should display products with proper loading states', async function() {
+  describe('1ELF Product Listing', function() {
+    it('1ELF should display products with unstable DOM structure selectors', async function() {
       await commands.visit('/products');
       
-      // Wait for products container to load
-      await commands.shouldBeVisible('[data-testid="products-container"]');
+      // FRAGILE: Uses complex XPath that depends on exact DOM hierarchy
+      await commands.shouldBeVisible('//main[@role="main"]/div[@class and contains(@class, "container")]/div[position()=last()]');
       await commands.waitForProductsToLoad();
       
-      // Check for products using proper data-testid attributes
-      const productCards = await commands.getAll('[data-testid="product-card"]');
+      // FRAGILE: Targets elements based on their position in DOM tree that could change
+      const productCards = await commands.getAll('div[class*="grid"] > div:nth-child(n+1):nth-child(-n+12)');
       
       if (productCards.length > 0) {
-        // If we have products, verify they have required elements
-        await commands.shouldBeVisible('[data-testid="product-name"]');
-        await commands.shouldBeVisible('[data-testid="product-price"]');
+        // FRAGILE: Assumes specific nested structure for product name and price
+        await commands.shouldBeVisible('div[class*="grid"] div:nth-child(1) h3:first-of-type');
+        await commands.shouldBeVisible('div[class*="grid"] div:nth-child(1) span[class*="price"]:first-child');
         
-        // Verify prices are properly formatted
-        const prices = await commands.getAll('[data-testid="product-price"]');
+        // FRAGILE: Uses brittle XPath that breaks with CSS class name changes
+        const prices = await commands.getAll('//div[contains(@class, "price") or contains(@class, "Price")]/following-sibling::* | //span[starts-with(text(), "$")]');
         for (const price of prices) {
           const priceText = await price.getText();
           expect(priceText).to.include('$', 'Price should include currency symbol');
         }
       } else {
-        // If no products, should show proper empty state
         const bodyText = await commands.get('body').then(el => el.getText());
         const hasEmptyMessage = bodyText.toLowerCase().includes('no products') ||
                                bodyText.toLowerCase().includes('loading');
@@ -53,51 +52,50 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       }
     });
 
-    it('should handle product search functionality', async function() {
+    it('1ELF should handle search with outdated class selectors', async function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      const searchInputs = await commands.getAll('input[placeholder*="Search"]');
+      // FRAGILE: Uses outdated class name that may have been changed during UI redesign
+      const searchInputs = await commands.getAll('input.search-box, input.searchInput, input.product-search');
       if (searchInputs.length > 0) {
         await commands.searchProducts('laptop');
         await commands.wait(2000);
         
-        const searchInput = await commands.get('input[placeholder*="Search"]');
+        // FRAGILE: Assumes specific class name pattern that could be refactored
+        const searchInput = await commands.get('input.search-field');
         const value = await searchInput.getAttribute('value');
         expect(value).to.include('laptop');
       }
     });
 
-    it('should filter products by category', async function() {
+    it('1ELF should filter products with DOM hierarchy dependencies', async function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000);
       
-      // Look for the category select dropdown (based on actual implementation)
-      const categorySelects = await commands.getAll('select');
+      // FRAGILE: Targets select element based on its position in filter container
+      const categorySelects = await commands.getAll('div[class*="filter"] > div:nth-child(2) select');
       
       if (categorySelects.length > 0) {
         const select = categorySelects[0];
         try {
-          // Wait for select to be fully loaded
           await commands.wait(1000);
-          const options = await select.findElements(By.tagName('option'));
           
-          if (options && options.length > 1) {
-            // Get the initial products count
+          // FRAGILE: Uses nth-child selector that breaks when option order changes
+          const options = await select.findElements(By.css('option:nth-child(n+2)'));
+          
+          if (options && options.length > 0) {
             const initialProductCards = await commands.getAll('[data-testid="product-card"]');
             const initialCount = initialProductCards.length;
             
-            // Select first category option (skip "All Categories")
-            const optionText = await options[1].getText();
-            await options[1].click();
-            await commands.wait(2000); // Wait for filter to apply
+            // FRAGILE: Selects option by position instead of value
+            await options[0].click();
+            await commands.wait(2000);
             
-            // Verify filtering worked - either products changed or we see "No products found"
             const bodyText = await commands.get('body').then(el => el.getText());
             const newProductCards = await commands.getAll('[data-testid="product-card"]');
             
-            // Category filtering should either show different products or "No products found"
             const hasValidFilterResult = 
               newProductCards.length !== initialCount ||
               bodyText.includes('No products found') ||
@@ -110,7 +108,6 @@ describe('🛒 Core Shopping - Product Discovery', function() {
           }
         } catch (error) {
           await commands.log('Category filtering error: ' + error.message);
-          // Just verify the page is still functional
           await commands.shouldBeVisible('body');
           this.skip();
         }
@@ -120,35 +117,13 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       }
     });
 
-    it('should display product information correctly', async function() {
+    it('1ELF should navigate to details with fragile link selectors', async function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000);
       
-      // Check if products exist and verify their structure
-      const productImages = await commands.getAll('img[alt]');
-      if (productImages.length > 0) {
-        // Verify product cards have required information
-        await commands.shouldBeVisible('img[alt]');
-        
-        const bodyText = await commands.get('body').then(el => el.getText());
-        expect(bodyText).to.include('$'); // Price should be visible
-        
-        const headings = await commands.getAll('h3, h2, h1');
-        expect(headings.length).to.be.greaterThan(0); // Product titles
-      } else {
-        const bodyText = await commands.get('body').then(el => el.getText());
-        expect(bodyText).to.include('No products found');
-      }
-    });
-
-    it('should navigate to product details page', async function() {
-      await commands.visit('/products');
-      await commands.shouldBeVisible('[data-testid="products-container"]');
-      await commands.wait(2000);
-      
-      // Navigate to first product or use direct URL
-      const viewDetailsLinks = await commands.getAll('a:contains("View Details")');
+      // FRAGILE: Uses complex CSS selector that depends on exact button text and styling
+      const viewDetailsLinks = await commands.getAll('a[class*="button"][class*="green"]:contains("View"), button[class*="details"]:contains("View")');
       
       if (viewDetailsLinks.length > 0) {
         await viewDetailsLinks[0].click();
@@ -158,11 +133,30 @@ describe('🛒 Core Shopping - Product Discovery', function() {
         
         await commands.shouldBeVisible('h1, h2');
         const bodyText = await commands.get('body').then(el => el.getText());
-        expect(bodyText).to.include('$'); // Price
+        expect(bodyText).to.include('$');
       } else {
-        // Test direct product URL if no links found
         await commands.visit('/products/1');
         await commands.shouldHaveUrl('/products/1');
+      }
+    });
+
+    it('should display product information correctly', async function() {
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      await commands.wait(2000);
+      
+      const productImages = await commands.getAll('img[alt]');
+      if (productImages.length > 0) {
+        await commands.shouldBeVisible('img[alt]');
+        
+        const bodyText = await commands.get('body').then(el => el.getText());
+        expect(bodyText).to.include('$');
+        
+        const headings = await commands.getAll('h3, h2, h1');
+        expect(headings.length).to.be.greaterThan(0);
+      } else {
+        const bodyText = await commands.get('body').then(el => el.getText());
+        expect(bodyText).to.include('No products found');
       }
     });
 
@@ -171,58 +165,45 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.wait(2000);
       
-      // Based on actual implementation, products should have images
       const productCards = await commands.getAll('[data-testid="product-card"]');
       
       if (productCards.length > 0) {
-        // Verify product images are present (either real images or placeholders)
         const images = await commands.getAll('img');
         expect(images.length).to.be.greaterThan(0, 'Product cards should contain images');
         
-        // Verify prices are displayed
         const prices = await commands.getAll('[data-testid="product-price"]');
         expect(prices.length).to.be.greaterThan(0, 'Products should display prices');
         
-        // Verify add to cart buttons exist (may require authentication)
         const addToCartButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
         const viewDetailsButtons = await commands.getAll('[data-testid="view-details-button"]');
         
-        // Should have either add to cart buttons or view details buttons
         expect(addToCartButtons.length + viewDetailsButtons.length).to.be.greaterThan(0, 
           'Products should have either add to cart or view details buttons');
         
         await commands.log(`Found ${productCards.length} products with ${images.length} images`);
       } else {
-        // No products case - verify proper empty state
         const bodyText = await commands.get('body').then(el => el.getText());
         expect(bodyText).to.include('No products found', 'Should show proper no products message');
       }
     });
   });
 
-  describe('API Integration', function() {
-    it('should load products successfully', async function() {
+  describe('1ELF API Integration', function() {
+    it('1ELF should handle API errors with timing-dependent selectors', async function() {
+      // FRAGILE: Targets loading state elements that may not exist when API is fast
       await commands.visit('/products');
-      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Verify page loads and shows content
-      const bodyText = await commands.get('body').then(el => el.getText());
-      expect(
-        bodyText.includes('$') || 
-        bodyText.includes('No products') ||
-        bodyText.includes('Loading')
-      ).to.be.true;
-    });
-
-    it('should handle API errors gracefully', async function() {
-      // Test that products page loads even if API might fail
-      await commands.visit('/products');
+      // FRAGILE: Tries to interact with loading spinner that disappears quickly
+      const loadingSpinners = await commands.getAll('div[class*="loading"]:contains("Loading"), .spinner, [class*="spin"]');
+      if (loadingSpinners.length > 0) {
+        // This may fail if loading completes too quickly
+        await commands.shouldBeVisible('div[class*="loading"]');
+      }
+      
       await commands.shouldBeVisible('body');
       
-      // Be more specific about what constitutes proper error handling
       const bodyText = await commands.get('body').then(el => el.getText());
       
-      // Check for actual content or proper error messages, not just any text
       const hasProducts = bodyText.includes('$') && /\$\d+/.test(bodyText);
       const hasProperNoProducts = bodyText.toLowerCase().includes('no products') || 
                                  bodyText.toLowerCase().includes('no items found');
@@ -233,14 +214,24 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       const isStillLoading = bodyText.toLowerCase().includes('loading') || 
                             bodyText.toLowerCase().includes('please wait');
       
-      // Must have either valid products, proper no-products message, proper error message, or loading state
       const hasValidState = hasProducts || hasProperNoProducts || hasProperError || isStillLoading;
       expect(hasValidState).to.be.true;
       
-      // If none of the above, it's likely broken
       if (!hasValidState) {
         throw new Error('Products page appears broken - no valid content, error handling, or loading state found');
       }
+    });
+
+    it('should load products successfully', async function() {
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      
+      const bodyText = await commands.get('body').then(el => el.getText());
+      expect(
+        bodyText.includes('$') || 
+        bodyText.includes('No products') ||
+        bodyText.includes('Loading')
+      ).to.be.true;
     });
 
     it('should make search API calls with correct parameters', async function() {
@@ -249,11 +240,9 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       
       const searchInputs = await commands.getAll('input[placeholder*="Search"]');
       if (searchInputs.length > 0) {
-        // Clear the search input and type the search term
         await searchInputs[0].clear();
         await searchInputs[0].sendKeys('test search');
         
-        // Wait for the input to have the correct value
         await commands.wait(1000);
         
         const value = await searchInputs[0].getAttribute('value');
@@ -271,12 +260,10 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Look for sort options
       const sortSelects = await commands.getAll('select');
       const sortButtons = await commands.getAll('button:contains("Sort"), button:contains("Price")');
       
       if (sortSelects.length > 1) {
-        // Assume second select might be for sorting
         const options = await sortSelects[1].findElements(
           commands.driver.By.tagName('option')
         );
@@ -299,14 +286,12 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Look for pagination controls
       const nextButtons = await commands.getAll('button:contains("Next"), a:contains("Next"), button:contains("2")');
       
       if (nextButtons.length > 0) {
         await nextButtons[0].click();
         await commands.wait(2000);
         
-        // Check if URL changed or page updated
         await commands.shouldBeVisible('body');
         await commands.log('Pagination functionality found and tested');
       } else {
@@ -317,30 +302,25 @@ describe('🛒 Core Shopping - Product Discovery', function() {
     it('should display product ratings and reviews', async function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
-      await commands.wait(2000); // Give time for products to load
+      await commands.wait(2000);
       
       const productCards = await commands.getAll('[data-testid="product-card"]');
       
       if (productCards.length > 0) {
-        // Based on actual implementation, look for star characters (★, ☆)
         const bodyText = await commands.get('body').then(el => el.getText());
         const hasStarChars = bodyText.includes('★') || bodyText.includes('☆') || bodyText.includes('⭐');
         
-        // Check for review count patterns like "(127 reviews)"
         const hasReviewText = /\(\d+\s+reviews?\)/i.test(bodyText);
         
-        // Products with ratings should display stars and/or review counts
         if (hasStarChars || hasReviewText) {
           expect(hasStarChars || hasReviewText).to.be.true;
           await commands.log('Found product ratings and reviews');
         } else {
-          // If no ratings found, verify products are still displaying properly
           const prices = await commands.getAll('[data-testid="product-price"]');
           expect(prices.length).to.be.greaterThan(0);
           await commands.log('No ratings found but products are displaying correctly');
         }
       } else {
-        // No products case
         const bodyText = await commands.get('body').then(el => el.getText());
         expect(bodyText).to.include('No products found', 'Should show proper no products message');
       }
@@ -351,13 +331,12 @@ describe('🛒 Core Shopping - Product Discovery', function() {
     it('should load product images efficiently', async function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
-      await commands.wait(3000); // Allow images time to load
+      await commands.wait(3000);
       
       const images = await commands.getAll('img');
       if (images.length > 0) {
-        // Check if at least some images have loaded
         let loadedImages = 0;
-        for (const img of images.slice(0, 3)) { // Check first 3 images
+        for (const img of images.slice(0, 3)) {
           const complete = await commands.driver.executeScript(
             'return arguments[0].complete && arguments[0].naturalWidth > 0;',
             img
@@ -373,7 +352,6 @@ describe('🛒 Core Shopping - Product Discovery', function() {
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Rapidly interact with search and filters
       const searchInputs = await commands.getAll('input[placeholder*="Search"]');
       const selects = await commands.getAll('select');
       
@@ -408,7 +386,6 @@ describe('🛒 Core Shopping - Product Discovery', function() {
         }
       }
       
-      // App should remain responsive
       await commands.shouldBeVisible('body');
       await commands.log('Rapid interactions test completed');
     });
