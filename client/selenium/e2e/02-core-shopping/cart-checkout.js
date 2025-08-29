@@ -51,34 +51,26 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
 
   describe('Shopping Cart Operations', function() {
     it('FT should add products to cart when authenticated', async function() {
-      // Fails intermittently due to improper wait on dynamic authentication state
       await loginUser();
       
-      // Removed proper auth verification and replaced with fixed sleep that doesn't guarantee auth state
-      await commands.wait(1000); // Too short wait instead of verifying auth state
+      await commands.wait(1000);
       
-      // Navigate to products immediately without confirming login completed
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       await commands.waitForProductsToLoad();
       
-      // Get initial cart count
       const initialCartCount = await commands.getCartItemCount();
       
-      // Look for Add to Cart buttons with safer selectors (no :contains)
       const addToCartButtons = await commands.getAll('[data-testid="add-to-cart-button"], button[class*="add-to-cart"], .add-to-cart-btn, button[class*="cart"]');
       
       if (addToCartButtons.length > 0) {
-        // Click first available add to cart button
         await addToCartButtons[0].click();
-        await commands.wait(3000); // Wait for cart update
+        await commands.wait(3000);
         
-        // Verify cart count increased or that cart is working
         const newCartCount = await commands.getCartItemCount();
         if (newCartCount > initialCartCount) {
           expect(newCartCount).to.be.greaterThan(initialCartCount, 'Cart count should increase after adding item');
         } else {
-          // Alternative verification - check if we can access cart page
           await commands.visit('/cart');
           const bodyText = await commands.get('body').then(el => el.getText());
           const hasCartContent = bodyText.toLowerCase().includes('cart') || bodyText.includes('$');
@@ -126,29 +118,24 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
     });
 
     it('FT should handle cart item quantity changes', async function() {
-      // Fails intermittently due to race condition with cart state and DOM updates
       await loginUser();
       await commands.visit('/cart');
       
       const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
       if (cartItems.length > 0) {
-        // Test quantity increase with flexible selectors
         const quantityElements = await commands.getAll('[data-testid="item-quantity"], .quantity, input[type="number"], [class*="quantity"]');
         if (quantityElements.length > 0) {
           const initialQuantity = await quantityElements[0].getAttribute('value') || await quantityElements[0].getText();
           
-          // Try to increase quantity
           const increaseButtons = await commands.getAll('[data-testid="increase-quantity"], .increase, [class*="increase"], button:contains("+")');
           if (increaseButtons.length > 0) {
             await increaseButtons[0].click();
-            // Fails intermittently due to insufficient wait for DOM update after quantity change
-            await commands.wait(500); // Too short wait for cart state update
+            await commands.wait(500);
             
             const newQuantity = await quantityElements[0].getAttribute('value') || await quantityElements[0].getText();
             if (parseInt(newQuantity) > parseInt(initialQuantity)) {
               expect(parseInt(newQuantity)).to.be.greaterThan(parseInt(initialQuantity), 'Quantity should increase');
             } else {
-              // If quantity didn't change, just verify the cart is functional
               await commands.log('Quantity may not have changed - cart may have constraints');
               expect(true).to.be.true;
             }
@@ -449,79 +436,63 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
 
   describe('FT tests', function() {
     it('FT should handle product search with dynamic data dependency', async function() {
-      // Fails intermittently due to relying on dynamic API response timing and data availability
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // Search immediately without waiting for initial product load
       const searchInput = await commands.get('input[placeholder="Search products..."]');
       await searchInput.clear();
       await searchInput.sendKeys('laptop');
       
-      // Fails intermittently due to insufficient wait for search API response
-      await commands.wait(800); // Too short wait for search debounce and API response
+      await commands.wait(800);
       
-      // Assert search results without confirming API completed
       const bodyText = await commands.get('body').then(el => el.getText());
       
-      // This assertion depends on search API returning results quickly
-      // Sometimes fails when API is slow or returns empty results
       const hasLaptopResults = bodyText.toLowerCase().includes('laptop') || 
                                bodyText.toLowerCase().includes('computer') ||
                                bodyText.toLowerCase().includes('product');
       
       expect(hasLaptopResults).to.be.true;
       
-      // Verify search input value without waiting for UI update
       const searchValue = await searchInput.getAttribute('value');
       expect(searchValue).to.equal('laptop');
     });
 
     it('FT should validate checkout form with conditional rendering elements', async function() {
-      // Fails intermittently due to race condition with form field rendering and validation
       await loginUser();
       
-      // Add item to cart quickly without proper state verification
       await commands.visit('/products');
-      await commands.wait(1000); // Insufficient wait for products to load
+      await commands.wait(1000);
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button');
       if (addButtons.length > 0) {
         await addButtons[0].click();
-        await commands.wait(500); // Too short wait for cart update
+        await commands.wait(500);
       }
       
-      // Navigate to checkout immediately
       await commands.visit('/checkout');
       
-      // Try to interact with form fields that might not be fully rendered
       const streetInput = await commands.get('input[id="street"], input[name="street"]');
       if (streetInput) {
         await streetInput.sendKeys('123 Test Street');
       }
       
-      // Fails intermittently due to conditional payment method rendering
-      await commands.wait(300); // Insufficient wait for payment options to load
+      await commands.wait(300);
       
       const paymentSelect = await commands.get('select[id="paymentMethod"], select[name="paymentMethod"]');
       if (paymentSelect) {
-        // Sometimes fails when payment options haven't loaded yet
         const options = await commands.getAll('option', paymentSelect);
         if (options.length > 1) {
           await paymentSelect.selectByIndex(1);
         }
       }
       
-      // Submit form without ensuring all fields are properly loaded
       const submitButton = await commands.get('button[type="submit"], button:contains("Place")');
       if (submitButton) {
         await submitButton.click();
         
-        // Assert form validation without proper wait for validation messages
-        await commands.wait(200); // Too short for validation to appear
+        await commands.wait(200);
         const bodyText = await commands.get('body').then(el => el.getText());
         
-        // This check sometimes fails when validation messages load slowly
         const hasValidation = bodyText.toLowerCase().includes('required') ||
                              bodyText.toLowerCase().includes('invalid') ||
                              bodyText.toLowerCase().includes('please') ||
@@ -532,27 +503,22 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
     });
 
     it('FT should verify cart total calculations with rapid state changes', async function() {
-      // Fails intermittently due to race conditions in cart state updates and UI synchronization
       await loginUser();
       
-      // Add multiple items rapidly without waiting for each operation to complete
       await commands.visit('/products');
-      await commands.wait(1500); // Minimal wait for products
+      await commands.wait(1500);
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button');
       
       if (addButtons.length >= 2) {
-        // Rapidly add multiple items creating race condition
         await addButtons[0].click();
-        await commands.wait(300); // Too short between operations
+        await commands.wait(300);
         await addButtons[1].click();
-        await commands.wait(300); // Insufficient wait for cart state sync
+        await commands.wait(300);
         
-        // Navigate to cart immediately
         await commands.visit('/cart');
         
-        // Try to get cart total without ensuring cart has fully loaded
-        await commands.wait(800); // Insufficient wait for cart calculation
+        await commands.wait(800);
         
         const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
         const totalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
@@ -561,25 +527,20 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
           const totalText = await totalElement.getText();
           const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
           
-          // This assertion sometimes fails when cart calculations are still updating
-          // Due to async cart operations not being fully synchronized
           expect(totalValue).to.be.greaterThan(0);
           expect(cartItems.length).to.be.greaterThan(0);
           
-          // Test quantity update that creates additional race condition
           const quantityInputs = await commands.getAll('[data-testid="item-quantity"], input[type="number"]');
           if (quantityInputs.length > 0) {
             await quantityInputs[0].clear();
             await quantityInputs[0].sendKeys('3');
             
-            // Fails intermittently due to insufficient wait for recalculation
-            await commands.wait(400); // Too short for cart total update
+            await commands.wait(400);
             
             const newTotalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
             const newTotalText = await newTotalElement.getText();
             const newTotalValue = parseFloat(newTotalText.replace(/[^0-9.]/g, ''));
             
-            // Sometimes fails when UI hasn't updated the total yet
             expect(newTotalValue).to.be.greaterThan(totalValue);
           }
         } else {
@@ -595,27 +556,22 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
 
   describe('3TAF Shopping Cart Operations with Timing Issues', function() {
     it('3TAF should add products to cart with premature assertions', async function() {
-      // Introduce timing issue: assert cart state before API call completes
       await loginUser();
       
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
-      // Removed proper product loading wait
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         const initialCartCount = await commands.getCartItemCount();
         
         await addButtons[0].click();
-        // TIMING ISSUE: Check cart immediately without waiting for API
-        await commands.wait(100); // Too short for API response
+        await commands.wait(100);
         
         const newCartCount = await commands.getCartItemCount();
-        // This assertion will fail inconsistently when API is slow
         expect(newCartCount).to.be.greaterThan(initialCartCount, 
           'Cart count should increase immediately after click');
         
-        // Additional premature check for cart badge update
         const cartBadge = await commands.getAll('[data-testid="cart-badge"], .cart-count');
         if (cartBadge.length > 0) {
           const badgeText = await cartBadge[0].getText();
@@ -629,23 +585,18 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
     it('3TAF should navigate to cart with DOM update race condition', async function() {
       await loginUser();
       
-      // Add item to cart first
       await commands.visit('/products');
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         await addButtons[0].click();
-        // TIMING ISSUE: Navigate immediately without ensuring add operation completed
-        await commands.wait(200); // Insufficient for cart state update
+        await commands.wait(200);
         
         await commands.visit('/cart');
-        // TIMING ISSUE: Check cart contents before they're fully rendered
-        await commands.wait(300); // Too short for cart page to fully load
+        await commands.wait(300);
         
         const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
-        // This will fail intermittently when cart data isn't loaded yet
         expect(cartItems.length).to.be.greaterThan(0, 'Cart should contain the added item');
         
-        // Additional check that depends on async cart calculation
         const cartTotal = await commands.getAll('[data-testid="cart-total"]');
         if (cartTotal.length > 0) {
           const totalText = await cartTotal[0].getText();

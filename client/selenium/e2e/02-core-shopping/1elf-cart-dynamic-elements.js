@@ -1,325 +1,429 @@
-const { describe, it, beforeEach, afterEach } = require('mocha');
+const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const { By } = require('selenium-webdriver');
-const TestSetup = require('../../support/test-setup');
+const TestSetup = require('../support/test-setup');
 
-describe('🛒 1ELF Shopping Cart - Dynamic Element Targeting', function() {
+describe('🛒 1ELF Cart Dynamic Elements - Selector Dependency Tests', function() {
   this.timeout(60000);
   
   const testSetup = new TestSetup();
   let commands;
   
-  const testUser = {
-    email: 'john@example.com',
-    password: 'password123'
+  const testConfig = {
+    users: {
+      valid: { email: 'john@example.com', password: 'password123' }
+    }
   };
 
-  beforeEach(async function() {
+  const loginUser = async () => {
     try {
-      await testSetup.beforeEach('chrome');
-      commands = testSetup.getCommands();
-      
-      // Login for all cart tests
-      await commands.loginAsTestUser(testUser.email, testUser.password);
+      await commands.visit('/login');
+      await commands.type('input[type="email"]', testConfig.users.valid.email);
+      await commands.type('input[type="password"]', testConfig.users.valid.password);
+      await commands.click('button[type="submit"]');
+      await commands.wait(2000);
     } catch (error) {
-      throw new Error(`Failed to initialize test setup: ${error.message}`);
+      await commands.log('Login helper failed: ' + error.message);
     }
+  };
+
+  before(async function() {
+    await testSetup.beforeEach('chrome');
+    commands = testSetup.getCommands();
+    await commands?.log('🚀 Starting 1ELF Cart Dynamic Elements Tests');
+  });
+
+  beforeEach(async function() {
+    await testSetup.beforeEach('chrome');
+    commands = testSetup.getCommands();
   });
 
   afterEach(async function() {
     await testSetup.afterEach();
   });
 
-  describe('1ELF Cart Item Management', function() {
+  describe('1ELF Dynamic Cart Interactions', function() {
     it('1ELF should add items with conditional rendering selectors', async function() {
+      await loginUser();
+      
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
-      await commands.waitForProductsToLoad();
+      await commands.wait(2000);
       
-      // FRAGILE: Targets add-to-cart button that may be conditionally rendered based on auth state
-      // This selector assumes the button exists but might fail if user isn't properly authenticated
-      const addToCartButtons = await commands.getAll('div[data-testid="product-card"]:first-child button[class*="primary"]:contains("Add")');
+      const products = await commands.getAll('[data-testid="product-card"]');
       
-      if (addToCartButtons.length > 0) {
-        const initialCartCount = await commands.getCartItemCount();
+      if (products.length > 0) {
+        const addButton = await commands.get('#product-1 .add-cart-btn', 30000);
         
-        // FRAGILE: Clicks button without verifying it's enabled or stock is available
-        await addToCartButtons[0].click();
-        
-        // FRAGILE: Insufficient wait for cart state update - may fail on slow networks
-        await commands.wait(800);
-        
-        // FRAGILE: Assumes cart badge element structure hasn't changed
-        const cartBadge = await commands.get('header nav a[href="/cart"] > span:last-child');
-        const newCartCount = parseInt(await cartBadge.getText()) || 0;
-        
-        expect(newCartCount).to.be.greaterThan(initialCartCount, 'Cart count should increase');
+        if (addButton) {
+          await addButton.click();
+          await commands.wait(1500);
+          
+          const cartBadge = await commands.get('nav .cart-badge.visible');
+          const badgeCount = await cartBadge.getText();
+          
+          expect(parseInt(badgeCount)).to.be.greaterThan(0);
+          
+          const successMessage = await commands.get('.notification.success.show');
+          const messageText = await successMessage.getText();
+          expect(messageText).to.include('added');
+          
+          const addButtonAfter = await commands.get('#product-1 .add-cart-btn.disabled');
+          expect(addButtonAfter).to.exist;
+        } else {
+          await commands.get('button[data-product-id="1"]').click();
+          await commands.wait(1000);
+          const cartCount = await commands.get('.cart-count:not(.hidden)').getText();
+          expect(parseInt(cartCount)).to.be.greaterThan(0);
+        }
       } else {
-        await commands.log('No add to cart buttons found - may require different auth state');
-        this.skip();
+        this.skip('No products available for testing');
       }
     });
 
     it('1ELF should modify quantities with unstable DOM selectors', async function() {
-      // Add item first to ensure cart has content
+      await loginUser();
+      
       await commands.visit('/products');
       await commands.shouldBeVisible('[data-testid="products-container"]');
-      await commands.wait(2000);
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         await addButtons[0].click();
         await commands.wait(1500);
-      }
-      
-      await commands.visit('/cart');
-      
-      // FRAGILE: Uses deeply nested selector that depends on exact DOM structure
-      const quantityControls = await commands.getAll('div[data-testid="cart-items"] > div:first-child > div:nth-child(4) > button:last-child');
-      
-      if (quantityControls.length > 0) {
-        // FRAGILE: Targets quantity display with assumption about element position
-        const quantityDisplay = await commands.get('div[data-testid="cart-items"] > div:first-child > div:nth-child(4) > span');
-        const initialQuantity = parseInt(await quantityDisplay.getText());
         
-        // FRAGILE: Clicks increase button without checking if max quantity reached
-        await quantityControls[0].click();
+        await commands.visit('/cart');
         
-        // FRAGILE: Too short wait for quantity update to reflect in UI
-        await commands.wait(400);
+        const quantityInput = await commands.get('input.qty-input[data-item-id]:nth-of-type(1)');
         
-        const newQuantity = parseInt(await quantityDisplay.getText());
-        
-        // This assertion may fail due to stock limits or cart update delays
-        expect(newQuantity).to.be.greaterThan(initialQuantity, 'Quantity should increase when possible');
+        if (quantityInput) {
+          await quantityInput.clear();
+          await quantityInput.sendKeys('3');
+          
+          const updateButton = await commands.get('button.update-qty.active');
+          await updateButton.click();
+          await commands.wait(1200);
+          
+          const updatedTotal = await commands.get('.cart-total .amount.updated');
+          const totalValue = parseFloat(await updatedTotal.getText().replace(/[^0-9.]/g, ''));
+          
+          expect(totalValue).to.be.greaterThan(0);
+          
+          const lineTotal = await commands.get('.line-item:first-child .line-total.calculated');
+          const lineValue = parseFloat(await lineTotal.getText().replace(/[^0-9.]/g, ''));
+          expect(lineValue).to.be.greaterThan(0);
+        } else {
+          this.skip('Quantity input not found with expected selector');
+        }
       } else {
-        await commands.log('No quantity controls found - cart may be empty');
-        this.skip();
+        this.skip('No add to cart buttons found');
       }
     });
 
     it('1ELF should calculate totals with fragile price selectors', async function() {
-      await commands.visit('/cart');
+      await loginUser();
       
-      // FRAGILE: Targets cart total using CSS selector that may change with styling updates
-      const cartTotal = await commands.get('div[class*="summary"] div[class*="total"]:last-child span:contains("$")');
-      const totalText = await cartTotal.getText();
-      const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      // FRAGILE: Assumes specific structure for cart items and their prices
-      const itemPrices = await commands.getAll('div[data-testid="cart-item"] div:last-child:contains("$")');
-      let calculatedTotal = 0;
-      
-      for (const priceElement of itemPrices) {
-        const priceText = await priceElement.getText();
-        const itemPrice = parseFloat(priceText.replace(/[^0-9.]/g, ''));
-        calculatedTotal += itemPrice;
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length >= 2) {
+        await addButtons[0].click();
+        await commands.wait(1000);
+        await addButtons[1].click();
+        await commands.wait(1000);
+        
+        await commands.visit('/cart');
+        
+        const itemPrices = await commands.getAll('.item-price .currency .amount');
+        const quantities = await commands.getAll('.quantity-display .current-qty');
+        
+        let expectedTotal = 0;
+        for (let i = 0; i < itemPrices.length; i++) {
+          const price = parseFloat(await itemPrices[i].getText());
+          const qty = parseInt(await quantities[i].getText());
+          expectedTotal += price * qty;
+        }
+        
+        const taxElement = await commands.get('.tax-calculation .tax-amount.computed');
+        const taxAmount = parseFloat(await taxElement.getText().replace(/[^0-9.]/g, ''));
+        expectedTotal += taxAmount;
+        
+        const shippingElement = await commands.get('.shipping-cost .fee.calculated');
+        const shippingCost = parseFloat(await shippingElement.getText().replace(/[^0-9.]/g, ''));
+        expectedTotal += shippingCost;
+        
+        const finalTotal = await commands.get('.grand-total .final-amount.computed');
+        const displayedTotal = parseFloat(await finalTotal.getText().replace(/[^0-9.]/g, ''));
+        
+        expect(Math.abs(displayedTotal - expectedTotal)).to.be.lessThan(0.01);
+      } else {
+        this.skip('Insufficient products for total calculation test');
       }
-      
-      // FRAGILE: Direct comparison without accounting for rounding differences or tax
-      expect(Math.abs(totalValue - calculatedTotal)).to.be.lessThan(0.01, 'Cart total should match sum of item prices');
     });
-  });
 
-  describe('1ELF Cart Navigation and UI', function() {
     it('1ELF should handle empty cart with missing element selectors', async function() {
-      // Clear cart first by removing all items
+      await loginUser();
+      
       await commands.visit('/cart');
       
-      // FRAGILE: Targets remove buttons using selector that may not exist in empty state
-      const removeButtons = await commands.getAll('button[data-testid="remove-item"], button:contains("Remove")');
+      const emptyMessage = await commands.get('.empty-cart-message.visible .primary-text');
       
-      // Remove all items to ensure empty state
-      for (const button of removeButtons) {
-        try {
-          await button.click();
-          await commands.wait(500);
-        } catch (error) {
-          // Button may disappear during removal process
-          continue;
+      if (emptyMessage) {
+        const messageText = await emptyMessage.getText();
+        expect(messageText.toLowerCase()).to.include('empty');
+        
+        const continueButton = await commands.get('.empty-cart .action-button.primary.enabled');
+        expect(continueButton).to.exist;
+        
+        const cartItemsContainer = await commands.get('.cart-items.empty .no-items-display');
+        expect(cartItemsContainer).to.exist;
+        
+        const checkoutButton = await commands.get('.checkout-section .checkout-btn.disabled.inactive');
+        expect(checkoutButton).to.exist;
+        
+        const totalSection = await commands.get('.totals-section.hidden .zero-total');
+        expect(totalSection).to.exist;
+      } else {
+        const cartItems = await commands.getAll('.cart-item.populated');
+        if (cartItems.length > 0) {
+          const removeButtons = await commands.getAll('.remove-item.delete-action');
+          
+          for (let button of removeButtons) {
+            await button.click();
+            await commands.wait(800);
+          }
+          
+          await commands.wait(1500);
+          
+          const emptyStateMessage = await commands.get('.cart-empty-state .message.displayed');
+          expect(emptyStateMessage).to.exist;
         }
       }
-      
-      await commands.wait(1000);
-      
-      // FRAGILE: Assumes specific empty state messaging that could change with content updates
-      const emptyMessage = await commands.get('div[class*="empty"] h3:contains("empty")');
-      const messageText = await emptyMessage.getText();
-      
-      expect(messageText.toLowerCase()).to.include('empty', 'Should show empty cart message');
-      
-      // FRAGILE: Targets "Shop Now" link that may have different text or be positioned differently
-      const shopNowLink = await commands.get('div[class*="empty"] a[class*="btn"]:contains("Shop")');
-      await shopNowLink.click();
-      
-      // Should navigate to products page
-      await commands.shouldHaveUrl('/products');
     });
 
     it('1ELF should navigate to checkout with state-dependent selectors', async function() {
-      // Ensure cart has items
+      await loginUser();
+      
       await commands.visit('/products');
-      await commands.wait(2000);
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         await addButtons[0].click();
-        await commands.wait(1000);
+        await commands.wait(1500);
+        
+        await commands.visit('/cart');
+        
+        const checkoutButton = await commands.get('.checkout-actions .proceed-btn.enabled.ready');
+        
+        if (checkoutButton) {
+          await checkoutButton.click();
+          await commands.wait(2000);
+          
+          const checkoutForm = await commands.get('.checkout-form.loaded .form-container');
+          expect(checkoutForm).to.exist;
+          
+          const stepIndicator = await commands.get('.checkout-steps .step.active[data-step="1"]');
+          expect(stepIndicator).to.exist;
+          
+          const progressBar = await commands.get('.progress-bar .progress.step-1.current');
+          expect(progressBar).to.exist;
+        } else {
+          this.skip('Checkout button not found in expected state');
+        }
+      } else {
+        this.skip('No products available for checkout flow');
       }
-      
-      await commands.visit('/cart');
-      
-      // FRAGILE: Targets checkout button that may be disabled or hidden when cart conditions aren't met
-      const checkoutButton = await commands.get('div[data-testid="cart-summary"] button[data-testid="checkout-button"]');
-      
-      // FRAGILE: Doesn't verify button is enabled before clicking
-      await checkoutButton.click();
-      
-      // FRAGILE: Assumes checkout page has specific URL pattern
-      const currentUrl = await commands.driver.getCurrentUrl();
-      expect(currentUrl).to.include('/checkout', 'Should navigate to checkout page');
-      
-      // FRAGILE: Assumes checkout page has specific form structure
-      const formElements = await commands.getAll('form input[required], form select[required]');
-      expect(formElements.length).to.be.greaterThan(0, 'Checkout should have required form fields');
     });
-  });
 
-  describe('1ELF Cart Persistence and State', function() {
     it('1ELF should maintain cart across sessions with storage-dependent behavior', async function() {
-      // Add item to cart
+      await loginUser();
+      
       await commands.visit('/products');
-      await commands.wait(2000);
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         await addButtons[0].click();
-        await commands.wait(1000);
+        await commands.wait(1500);
         
-        // Get initial cart count
-        const initialCount = await commands.getCartItemCount();
+        const cartBadge = await commands.get('.header-cart .badge.visible .count');
+        const initialCount = parseInt(await cartBadge.getText());
         
-        // FRAGILE: Assumes browser refresh maintains auth and cart state
+        await commands.driver.manage().deleteAllCookies();
+        
         await commands.reload();
         await commands.wait(2000);
         
-        // FRAGILE: Targets cart badge without verifying auth state persisted
-        const persistedCount = await commands.getCartItemCount();
+        const persistentCartBadge = await commands.get('.header-cart .badge.persistent .stored-count');
         
-        expect(persistedCount).to.equal(initialCount, 'Cart should persist across page reloads');
-        
-        // FRAGILE: Navigates to cart and assumes items are still there
-        await commands.visit('/cart');
-        
-        // FRAGILE: Targets cart items without checking if user session is still valid
-        const cartItems = await commands.getAll('[data-testid="cart-item"]');
-        expect(cartItems.length).to.be.greaterThan(0, 'Cart items should persist');
+        if (persistentCartBadge) {
+          const persistedCount = parseInt(await persistentCartBadge.getText());
+          expect(persistedCount).to.equal(initialCount);
+          
+          await commands.visit('/cart');
+          
+          const restoredItems = await commands.getAll('.cart-item.restored .item-data');
+          expect(restoredItems.length).to.be.greaterThan(0);
+          
+          const sessionMessage = await commands.get('.session-restore .message.success');
+          expect(sessionMessage).to.exist;
+        } else {
+          const guestCartBadge = await commands.get('.header-cart .badge.guest .temp-count');
+          const guestCount = parseInt(await guestCartBadge.getText());
+          expect(guestCount).to.equal(initialCount);
+        }
       } else {
-        this.skip('No products available to test cart persistence');
+        this.skip('No products available for session persistence test');
       }
     });
 
     it('1ELF should handle cart updates with race condition selectors', async function() {
-      await commands.visit('/cart');
+      await loginUser();
       
-      // FRAGILE: Rapidly performs multiple operations that could create race conditions
-      const cartItems = await commands.getAll('[data-testid="cart-item"]');
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      if (cartItems.length > 0) {
-        // FRAGILE: Targets quantity controls and performs rapid changes
-        const quantityInputs = await commands.getAll('input[data-testid="item-quantity"]');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length >= 2) {
+        await addButtons[0].click();
+        const firstUpdateSpinner = await commands.get('.cart-update .spinner.active.product-1');
+        await commands.wait(500);
         
-        if (quantityInputs.length > 0) {
-          // FRAGILE: Changes quantity rapidly without waiting for each update to complete
+        await addButtons[1].click();
+        const secondUpdateSpinner = await commands.get('.cart-update .spinner.active.product-2');
+        await commands.wait(500);
+        
+        await commands.visit('/cart');
+        
+        const loadingIndicator = await commands.get('.cart-loading .sync-indicator.processing');
+        await commands.waitForElementToDisappear('.cart-loading .sync-indicator.processing', 5000);
+        
+        const cartItems = await commands.getAll('.cart-item.loaded .item-details');
+        expect(cartItems.length).to.equal(2);
+        
+        const batchUpdateButton = await commands.get('.batch-actions .update-all.ready');
+        
+        if (batchUpdateButton) {
+          const quantityInputs = await commands.getAll('.qty-input.editable');
+          
           await quantityInputs[0].clear();
           await quantityInputs[0].sendKeys('2');
-          await commands.wait(200); // Too short for cart update
           
-          await quantityInputs[0].clear();
-          await quantityInputs[0].sendKeys('3');
-          await commands.wait(200); // Insufficient time
+          await quantityInputs[1].clear();
+          await quantityInputs[1].sendKeys('3');
           
-          // FRAGILE: Assumes final value reflects last input without race condition conflicts
-          const finalQuantity = await quantityInputs[0].getAttribute('value');
-          expect(finalQuantity).to.equal('3', 'Final quantity should match last input');
+          await batchUpdateButton.click();
           
-          // FRAGILE: Checks cart total immediately without ensuring calculations completed
-          const cartTotal = await commands.get('[data-testid="cart-total"]');
-          const totalText = await cartTotal.getText();
+          const batchSpinner = await commands.get('.batch-update .processing-indicator.active');
+          await commands.waitForElementToDisappear('.batch-update .processing-indicator.active', 5000);
           
-          expect(totalText).to.include('$', 'Cart total should be updated');
+          const updatedTotals = await commands.get('.totals-section .recalculated .final-amount');
+          expect(updatedTotals).to.exist;
         }
       } else {
-        this.skip('No cart items to test quantity updates');
+        this.skip('Insufficient products for race condition testing');
       }
     });
-  });
 
-  describe('1ELF Cart Error Handling', function() {
     it('1ELF should handle out-of-stock scenarios with brittle messaging', async function() {
-      await commands.visit('/cart');
+      await loginUser();
       
-      // FRAGILE: Assumes error messages have specific text content and styling
-      const errorMessages = await commands.getAll('div[class*="error"]:contains("stock"), div[class*="warning"]:contains("available")');
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      if (errorMessages.length > 0) {
-        const errorText = await errorMessages[0].getText();
+      const stockElements = await commands.getAll('.product-stock .availability-status');
+      
+      for (let stockElement of stockElements) {
+        const stockText = await stockElement.getText();
         
-        // FRAGILE: Depends on specific error message wording
-        expect(errorText.toLowerCase()).to.include('stock', 'Should show stock-related error');
-        
-        // FRAGILE: Assumes specific button styling for disabled state
-        const updateButtons = await commands.getAll('button[class*="disabled"], button[disabled]');
-        expect(updateButtons.length).to.be.greaterThan(0, 'Relevant buttons should be disabled');
-      } else {
-        // FRAGILE: Simulates out-of-stock by manipulating cart item quantities beyond limits
-        const quantityInputs = await commands.getAll('input[data-testid="item-quantity"]');
-        
-        if (quantityInputs.length > 0) {
-          // Try to set quantity to unreasonably high number
-          await quantityInputs[0].clear();
-          await quantityInputs[0].sendKeys('999');
+        if (stockText.toLowerCase().includes('out of stock') || 
+            stockText.toLowerCase().includes('unavailable')) {
           
-          // FRAGILE: Assumes validation triggers immediately
-          await commands.wait(500);
+          const productCard = await stockElement.findElement(commands.driver.By.xpath('./ancestor::*[contains(@class, "product-card")]'));
+          const addButton = await productCard.findElement(commands.driver.By.css('.add-to-cart.disabled.out-of-stock'));
           
-          // FRAGILE: Targets validation message with specific selector pattern
-          const validationMessages = await commands.getAll('div[class*="validation"], span[class*="error"]');
+          const isDisabled = !(await addButton.isEnabled());
+          expect(isDisabled).to.be.true;
           
-          if (validationMessages.length > 0) {
-            expect(validationMessages.length).to.be.greaterThan(0, 'Should show validation message');
-          } else {
-            await commands.log('No stock validation found - may not be implemented');
-          }
+          const stockMessage = await productCard.findElement(commands.driver.By.css('.stock-message.warning.visible'));
+          const messageText = await stockMessage.getText();
+          expect(messageText.toLowerCase()).to.include('stock');
+          
+          const notifyButton = await productCard.findElement(commands.driver.By.css('.notify-available.enabled'));
+          expect(notifyButton).to.exist;
+          
+          await notifyButton.click();
+          
+          const notificationForm = await commands.get('.stock-notification .email-form.visible');
+          expect(notificationForm).to.exist;
+          
+          const emailInput = await commands.get('.stock-notification .email-input.required');
+          await emailInput.sendKeys('test@example.com');
+          
+          const submitButton = await commands.get('.stock-notification .submit-btn.enabled');
+          await submitButton.click();
+          
+          const confirmationMessage = await commands.get('.notification .success-message.shown');
+          expect(confirmationMessage).to.exist;
+          
+          break;
         }
       }
     });
 
     it('1ELF should handle network errors with fragile retry mechanisms', async function() {
-      await commands.visit('/cart');
+      await loginUser();
       
-      // FRAGILE: Simulates network error by manipulating storage/session
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      
       await commands.driver.executeScript(`
-        // Simulate expired auth token to trigger potential network errors
-        localStorage.setItem('authToken', 'expired-token-simulation');
+        const originalFetch = window.fetch;
+        let callCount = 0;
+        window.fetch = function(...args) {
+          callCount++;
+          if (callCount <= 2 && args[0].includes('/api/cart')) {
+            return Promise.reject(new Error('Network error'));
+          }
+          return originalFetch.apply(this, args);
+        };
       `);
       
-      const refreshButton = await commands.get('button:contains("Refresh"), button:contains("Reload")');
-      
-      if (refreshButton) {
-        await refreshButton.click();
-        await commands.wait(1000);
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        await addButtons[0].click();
         
-        // FRAGILE: Assumes error state has specific visual indicators
-        const errorIndicators = await commands.getAll('div[class*="error"], div[class*="offline"], div[class*="failed"]');
+        const errorNotification = await commands.get('.error-notification .network-error.visible');
+        expect(errorNotification).to.exist;
         
-        if (errorIndicators.length > 0) {
-          expect(errorIndicators.length).to.be.greaterThan(0, 'Should show error state');
-        } else {
-          await commands.log('No clear error indicators found');
+        const retryButton = await commands.get('.error-actions .retry-btn.enabled');
+        expect(retryButton).to.exist;
+        
+        await retryButton.click();
+        
+        const retrySpinner = await commands.get('.retry-action .spinner.active');
+        await commands.waitForElementToDisappear('.retry-action .spinner.active', 5000);
+        
+        const secondErrorNotification = await commands.get('.error-notification .retry-failed.shown');
+        
+        if (secondErrorNotification) {
+          const manualRetryButton = await commands.get('.error-actions .manual-retry.available');
+          await manualRetryButton.click();
+          await commands.wait(1000);
         }
+        
+        const finalRetryButton = await commands.get('.error-actions .final-retry.enabled');
+        await finalRetryButton.click();
+        
+        const successNotification = await commands.get('.success-notification .recovery-success.displayed');
+        expect(successNotification).to.exist;
+        
+        const cartBadge = await commands.get('.header-cart .badge.updated .final-count');
+        const badgeCount = parseInt(await cartBadge.getText());
+        expect(badgeCount).to.be.greaterThan(0);
       } else {
-        await commands.log('No refresh mechanism found');
+        this.skip('No products available for network error testing');
       }
     });
   });
