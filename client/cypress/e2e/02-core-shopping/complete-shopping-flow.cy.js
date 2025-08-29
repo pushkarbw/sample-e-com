@@ -362,3 +362,284 @@ describe('🛒 Core Shopping Functionality', () => {
     });
   });
 });
+
+describe('🛒 3TAF Shopping Flow - Timing Dependencies', () => {
+  const testConfig = {
+    defaultUser: {
+      email: 'john@example.com',
+      password: 'password123'
+    }
+  };
+
+  beforeEach(() => {
+    cy.clearAllStorage();
+  });
+
+  context('3TAF Cart Operations with DOM Timing Issues', () => {
+    it('3TAF should add items to cart without waiting for API completion', () => {
+      // TIMING ISSUE: Login and immediately proceed without ensuring auth state
+      cy.visit('/login');
+      cy.get('input[type="email"]').type(testConfig.defaultUser.email);
+      cy.get('input[type="password"]').type(testConfig.defaultUser.password);
+      cy.get('button[type="submit"]').click();
+      
+      // TIMING ISSUE: Navigate too quickly after login
+      cy.wait(300); // Too short for auth state propagation
+      
+      cy.visit('/products');
+      
+      // TIMING ISSUE: Interact with products before they fully load
+      cy.wait(500); // Insufficient for products API and rendering
+      
+      cy.get('body').then(($body) => {
+        const addButtons = $body.find('button').filter((i, el) => 
+          Cypress.$(el).text().toLowerCase().includes('add')
+        );
+        
+        if (addButtons.length > 0) {
+          cy.wrap(addButtons.first()).click();
+          
+          // TIMING ISSUE: Check cart state immediately without waiting for add API
+          cy.wait(200); // Too short for cart API response
+          
+          // This assertion will fail inconsistently when API is slow
+          cy.get('[data-testid="cart-badge"], .cart-count').should('be.visible').then($badge => {
+            const count = parseInt($badge.text()) || 0;
+            expect(count).to.be.greaterThan(0, 'Cart should show added item immediately');
+          });
+          
+          // TIMING ISSUE: Navigate to cart before add operation completes
+          cy.visit('/cart');
+          cy.wait(400); // Too short for cart data to load
+          
+          // This will fail when cart data hasn't synced yet
+          cy.get('[data-testid="cart-item"], .cart-item').should('have.length.greaterThan', 0);
+        }
+      });
+    });
+
+    it('3TAF should modify cart quantities with race conditions', () => {
+      // Login quickly
+      cy.visit('/login');
+      cy.get('input[type="email"]').type(testConfig.defaultUser.email);
+      cy.get('input[type="password"]').type(testConfig.defaultUser.password);
+      cy.get('button[type="submit"]').click();
+      cy.wait(800); // Short wait for login
+      
+      // Add product to cart
+      cy.visit('/products');
+      cy.get('body').then(($body) => {
+        const addButtons = $body.find('button').filter((i, el) => 
+          Cypress.$(el).text().toLowerCase().includes('add')
+        );
+        
+        if (addButtons.length > 0) {
+          cy.wrap(addButtons.first()).click();
+          cy.wait(600); // May not be enough for cart update
+          
+          cy.visit('/cart');
+          
+          // TIMING ISSUE: Rapid quantity changes without waiting for each update
+          cy.get('body').then(($cartBody) => {
+            const quantityInputs = $cartBody.find('input[type="number"], [data-testid="item-quantity"]');
+            
+            if (quantityInputs.length > 0) {
+              // Rapid quantity updates that create race conditions
+              cy.wrap(quantityInputs.first()).clear().type('3');
+              cy.wait(150); // Too short for cart recalculation
+              
+              cy.wrap(quantityInputs.first()).clear().type('5');
+              cy.wait(150); // Another rapid change
+              
+              cy.wrap(quantityInputs.first()).clear().type('2');
+              cy.wait(300); // Brief final wait
+              
+              // TIMING ISSUE: Check total before all updates complete
+              cy.get('[data-testid="cart-total"], .total').should('be.visible').then($total => {
+                const totalText = $total.text();
+                const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+                
+                // This might fail if previous quantity updates are still processing
+                expect(totalValue).to.be.greaterThan(0, 'Cart total should reflect final quantity');
+              });
+            }
+          });
+        }
+      });
+    });
+  });
+
+  context('3TAF Search and Filter Timing Dependencies', () => {
+    it('3TAF should search before debounce completes', () => {
+      cy.visit('/products');
+      
+      // TIMING ISSUE: Start searching immediately without waiting for page load
+      cy.wait(300); // Too short for initial product load
+      
+      cy.get('body').then(($body) => {
+        const searchInputs = $body.find('input[placeholder*="search"], input[placeholder*="Search"]');
+        
+        if (searchInputs.length > 0) {
+          // TIMING ISSUE: Rapid search input changes
+          cy.wrap(searchInputs.first()).type('lap');
+          cy.wait(100); // Much shorter than typical debounce
+          
+          cy.wrap(searchInputs.first()).clear().type('laptop');
+          cy.wait(100); // Too short for search API
+          
+          cy.wrap(searchInputs.first()).clear().type('computer');
+          cy.wait(200); // Still shorter than typical API response
+          
+          // TIMING ISSUE: Assert results before search completes
+          cy.get('[data-testid="product-card"], .product').should('have.length.greaterThan', 0);
+          
+          // Additional check that depends on search completion
+          cy.get('body').should('contain.text', 'computer').or('contain.text', 'Computer');
+        }
+      });
+    });
+
+    it('3TAF should interact with filters before options populate', () => {
+      cy.visit('/products');
+      
+      // TIMING ISSUE: Try to use filters before they're populated from API
+      cy.wait(200); // Too short for filter data
+      
+      cy.get('body').then(($body) => {
+        const categorySelects = $body.find('select[name*="category"], select[data-testid*="category"]');
+        
+        if (categorySelects.length > 0) {
+          // TIMING ISSUE: Select option before options are loaded
+          cy.wrap(categorySelects.first()).should('be.visible');
+          
+          cy.wrap(categorySelects.first()).find('option').should('have.length.greaterThan', 1);
+          cy.wrap(categorySelects.first()).select(1); // Select by index
+          
+          // TIMING ISSUE: Check filtered results immediately
+          cy.wait(300); // Too short for filter API call
+          
+          // This assertion may fail if filtering hasn't completed
+          cy.get('[data-testid="product-card"], .product').should('have.length.greaterThan', 0);
+        } else {
+          // Try price range filter
+          const priceInputs = $body.find('input[name*="price"], input[type="range"]');
+          if (priceInputs.length > 0) {
+            cy.wrap(priceInputs.first()).clear().type('50');
+            cy.wait(200); // Too short for price filter
+            
+            cy.get('[data-testid="product-card"], .product').should('have.length.greaterThan', 0);
+          }
+        }
+      });
+    });
+  });
+
+  context('3TAF Authentication Flow Dependencies', () => {
+    it('3TAF should access protected features before auth verification', () => {
+      // TIMING ISSUE: Login and immediately try to access protected features
+      cy.visit('/login');
+      cy.get('input[type="email"]').type(testConfig.defaultUser.email);
+      cy.get('input[type="password"]').type(testConfig.defaultUser.password);
+      cy.get('button[type="submit"]').click();
+      
+      // TIMING ISSUE: Don't wait for auth confirmation
+      cy.wait(400); // Too short for authentication process
+      
+      // Try to access checkout immediately
+      cy.visit('/checkout');
+      
+      // TIMING ISSUE: Assert checkout access before auth state is verified
+      cy.url().should('include', '/checkout');
+      
+      // Check for checkout elements without ensuring user is authenticated
+      cy.get('body').should('contain.text', 'checkout').or('contain.text', 'Checkout');
+      
+      // TIMING ISSUE: Try to fill checkout form before fields are enabled
+      cy.get('body').then(($body) => {
+        const inputs = $body.find('input, select, textarea');
+        
+        if (inputs.length > 0) {
+          // This might fail if auth-dependent fields aren't enabled yet
+          cy.wrap(inputs.first()).should('be.enabled');
+          
+          const emailInputs = $body.find('input[type="email"], input[name*="email"]');
+          if (emailInputs.length > 0) {
+            cy.wrap(emailInputs.first()).type('test@example.com');
+          }
+        }
+      });
+    });
+
+    it('3TAF should interact with user-specific features too early', () => {
+      // Quick login without proper verification
+      cy.visit('/login');
+      cy.get('input[type="email"]').type(testConfig.defaultUser.email);
+      cy.get('input[type="password"]').type(testConfig.defaultUser.password);
+      cy.get('button[type="submit"]').click();
+      
+      // TIMING ISSUE: Navigate to profile/account before session is established
+      cy.wait(350); // Too short for session establishment
+      
+      cy.visit('/profile', { failOnStatusCode: false });
+      
+      // TIMING ISSUE: Check profile content before user data loads
+      cy.get('body').then(($body) => {
+        if ($body.find('input, form').length > 0) {
+          // Profile form exists - check if user data is populated
+          const nameInputs = $body.find('input[name*="name"], input[name*="first"]');
+          
+          if (nameInputs.length > 0) {
+            // This might fail if user data hasn't loaded yet
+            cy.wrap(nameInputs.first()).should('have.value').and('not.be.empty');
+          }
+          
+          // Try to update profile immediately
+          const saveButtons = $body.find('button').filter((i, el) => 
+            Cypress.$(el).text().toLowerCase().includes('save') ||
+            Cypress.$(el).text().toLowerCase().includes('update')
+          );
+          
+          if (saveButtons.length > 0) {
+            cy.wrap(saveButtons.first()).should('be.enabled');
+          }
+        }
+      });
+    });
+  });
+
+  context('3TAF Pagination and Dynamic Content', () => {
+    it('3TAF should navigate pages before count calculation', () => {
+      cy.visit('/products');
+      
+      // TIMING ISSUE: Look for pagination before product count is known
+      cy.wait(400); // Too short for pagination calculation
+      
+      cy.get('body').then(($body) => {
+        const paginationElements = $body.find('.pagination, [data-testid="pagination"]');
+        
+        if (paginationElements.length > 0) {
+          const nextButtons = $body.find('button, a').filter((i, el) => 
+            Cypress.$(el).text().toLowerCase().includes('next') ||
+            Cypress.$(el).text() === '2'
+          );
+          
+          if (nextButtons.length > 0) {
+            cy.wrap(nextButtons.first()).should('be.enabled');
+            cy.wrap(nextButtons.first()).click();
+            
+            // TIMING ISSUE: Assert page change immediately
+            cy.wait(500); // Too short for page transition
+            
+            // This might fail if page change hasn't completed
+            cy.get('[data-testid="product-card"], .product').should('have.length.greaterThan', 0);
+            
+            // Check if URL or page indicator changed
+            cy.url().should('satisfy', (url) => {
+              return url.includes('page=2') || url.includes('?page=2');
+            });
+          }
+        }
+      });
+    });
+  });
+});

@@ -592,4 +592,69 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
   });
+
+  describe('3TAF Shopping Cart Operations with Timing Issues', function() {
+    it('3TAF should add products to cart with premature assertions', async function() {
+      // Introduce timing issue: assert cart state before API call completes
+      await loginUser();
+      
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      // Removed proper product loading wait
+      
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        const initialCartCount = await commands.getCartItemCount();
+        
+        await addButtons[0].click();
+        // TIMING ISSUE: Check cart immediately without waiting for API
+        await commands.wait(100); // Too short for API response
+        
+        const newCartCount = await commands.getCartItemCount();
+        // This assertion will fail inconsistently when API is slow
+        expect(newCartCount).to.be.greaterThan(initialCartCount, 
+          'Cart count should increase immediately after click');
+        
+        // Additional premature check for cart badge update
+        const cartBadge = await commands.getAll('[data-testid="cart-badge"], .cart-count');
+        if (cartBadge.length > 0) {
+          const badgeText = await cartBadge[0].getText();
+          expect(parseInt(badgeText)).to.equal(newCartCount);
+        }
+      } else {
+        this.skip('No products available for testing');
+      }
+    });
+
+    it('3TAF should navigate to cart with DOM update race condition', async function() {
+      await loginUser();
+      
+      // Add item to cart first
+      await commands.visit('/products');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        await addButtons[0].click();
+        // TIMING ISSUE: Navigate immediately without ensuring add operation completed
+        await commands.wait(200); // Insufficient for cart state update
+        
+        await commands.visit('/cart');
+        // TIMING ISSUE: Check cart contents before they're fully rendered
+        await commands.wait(300); // Too short for cart page to fully load
+        
+        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        // This will fail intermittently when cart data isn't loaded yet
+        expect(cartItems.length).to.be.greaterThan(0, 'Cart should contain the added item');
+        
+        // Additional check that depends on async cart calculation
+        const cartTotal = await commands.getAll('[data-testid="cart-total"]');
+        if (cartTotal.length > 0) {
+          const totalText = await cartTotal[0].getText();
+          const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+          expect(totalValue).to.be.greaterThan(0, 'Cart total should be calculated');
+        }
+      } else {
+        this.skip('No products available for cart testing');
+      }
+    });
+  });
 });
