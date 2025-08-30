@@ -1,6 +1,6 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const TestSetup = require('../support/test-setup');
+const TestSetup = require('../../support/test-setup');
 
 describe('🛒 2FT Product Search - Advanced Discovery Tests', function() {
   this.timeout(60000);

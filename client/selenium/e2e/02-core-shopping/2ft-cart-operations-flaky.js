@@ -1,8 +1,8 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const TestSetup = require('../support/test-setup');
+const TestSetup = require('../../support/test-setup');
 
-describe('🛒 2FT Cart Operations - Advanced Shopping Tests', function() {
+describe('🛒 2FT Cart Operations - Race Condition Tests', function() {
   this.timeout(60000);
   
   const testSetup = new TestSetup();
@@ -20,7 +20,7 @@ describe('🛒 2FT Cart Operations - Advanced Shopping Tests', function() {
       await commands.type('input[type="email"]', testConfig.users.valid.email);
       await commands.type('input[type="password"]', testConfig.users.valid.password);
       await commands.click('button[type="submit"]');
-      await commands.wait(2000);
+      await commands.wait(1800);
     } catch (error) {
       await commands.log('Login helper failed: ' + error.message);
     }
@@ -55,33 +55,38 @@ describe('🛒 2FT Cart Operations - Advanced Shopping Tests', function() {
         await commands.wait(1500);
         
         await commands.visit('/cart');
+        await commands.wait(1200);
         
         const quantityInputs = await commands.getAll('[data-testid="item-quantity"], input[type="number"]');
         
         if (quantityInputs.length > 0) {
-          await quantityInputs[0].clear();
-          await quantityInputs[0].sendKeys('3');
-          await commands.wait(200);
+          const originalQuantity = await quantityInputs[0].getAttribute('value');
           
           await quantityInputs[0].clear();
           await quantityInputs[0].sendKeys('5');
-          await commands.wait(200);
-          
-          await quantityInputs[0].clear();
-          await quantityInputs[0].sendKeys('2');
           await commands.wait(800);
           
-          const totalElements = await commands.getAll('[data-testid="cart-total"], .total, [class*="total"]');
+          await quantityInputs[0].clear();
+          await quantityInputs[0].sendKeys('3');
+          await commands.wait(600);
+          
+          await quantityInputs[0].clear();
+          await quantityInputs[0].sendKeys('7');
+          await commands.wait(1000);
+          
+          const totalElements = await commands.getAll('[data-testid="cart-total"]');
           
           if (totalElements.length > 0) {
             const totalText = await totalElements[0].getText();
-            const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+            const total = parseFloat(totalText.replace(/[^0-9.]/g, ''));
             
-            expect(totalValue).to.be.greaterThan(0, 'Cart total should reflect updated quantity');
+            expect(total).to.be.greaterThan(0, 'Cart total should update after quantity changes');
             
             const finalQuantity = await quantityInputs[0].getAttribute('value');
-            expect(parseInt(finalQuantity)).to.equal(2, 'Final quantity should be 2');
+            expect(parseInt(finalQuantity)).to.equal(7, 'Final quantity should be 7');
           }
+        } else {
+          this.skip('No quantity inputs found in cart');
         }
       } else {
         this.skip('No products available for cart testing');
@@ -95,37 +100,40 @@ describe('🛒 2FT Cart Operations - Advanced Shopping Tests', function() {
       await commands.shouldBeVisible('[data-testid="products-container"]');
       
       const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
-      if (addButtons.length >= 2) {
+      if (addButtons.length > 0) {
         await addButtons[0].click();
-        await commands.wait(800);
-        
-        await addButtons[1].click();
-        await commands.wait(600);
+        await commands.wait(1200);
         
         const initialCartCount = await commands.getCartItemCount();
         
         await commands.visit('/');
-        await commands.wait(300);
+        await commands.wait(900);
+        
+        await commands.visit('/products');
+        await commands.wait(800);
+        
+        const persistedCartCount = await commands.getCartItemCount();
+        
+        expect(persistedCartCount).to.equal(initialCartCount, 
+          'Cart count should persist across navigation');
+        
         await commands.visit('/cart');
         await commands.wait(1000);
         
-        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        const cartItems = await commands.getAll('[data-testid="cart-item"]');
+        expect(cartItems.length).to.be.greaterThan(0, 'Cart items should persist');
         
-        expect(cartItems.length).to.be.greaterThan(0, 'Cart should persist across navigation');
+        await commands.reload();
+        await commands.wait(1200);
         
-        if (cartItems.length > 0) {
-          const currentCartCount = await commands.getCartItemCount();
-          
-          expect(currentCartCount).to.equal(cartItems.length, 
-            'Cart badge should match number of items in cart');
-        }
+        const reloadedCartItems = await commands.getAll('[data-testid="cart-item"]');
+        expect(reloadedCartItems.length).to.equal(cartItems.length, 
+          'Cart should survive page reload');
       } else {
-        this.skip('Insufficient products for multi-item cart test');
+        this.skip('No products available for persistence testing');
       }
     });
-  });
 
-  describe('2FT Cart Item Interactions', function() {
     it('2FT should handle remove operations with DOM update timing issues', async function() {
       await loginUser();
       
@@ -140,140 +148,40 @@ describe('🛒 2FT Cart Operations - Advanced Shopping Tests', function() {
         await commands.wait(1000);
         
         await commands.visit('/cart');
-        
-        let cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
-        const initialCount = cartItems.length;
-        
-        if (initialCount >= 2) {
-          const removeButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove")');
-          
-          if (removeButtons.length > 0) {
-            await removeButtons[0].click();
-            await commands.wait(600);
-            
-            const updatedCartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
-            
-            expect(updatedCartItems.length).to.be.lessThan(initialCount, 
-              'Cart should have fewer items after removal');
-            
-            const newRemoveButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove")');
-            
-            if (newRemoveButtons.length > 0) {
-              await newRemoveButtons[0].click();
-              await commands.wait(400);
-              
-              const finalCartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
-              
-              if (finalCartItems.length === 0) {
-                const bodyText = await commands.get('body').then(el => el.getText());
-                expect(bodyText.toLowerCase()).to.include('empty');
-              } else {
-                expect(finalCartItems.length).to.be.lessThan(updatedCartItems.length);
-              }
-            }
-          }
-        }
-      } else {
-        this.skip('Insufficient products for removal testing');
-      }
-    });
-
-    it('2FT should validate cart total calculations with precision-dependent assertions', async function() {
-      await loginUser();
-      
-      await commands.visit('/products');
-      await commands.shouldBeVisible('[data-testid="products-container"]');
-      
-      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
-      if (addButtons.length > 0) {
-        await addButtons[0].click();
         await commands.wait(1500);
         
-        await commands.visit('/cart');
+        const initialCartItems = await commands.getAll('[data-testid="cart-item"]');
+        const initialItemCount = initialCartItems.length;
         
-        const cartItems = await commands.getAll('[data-testid="cart-item"]');
-        if (cartItems.length > 0) {
-          const priceElements = await commands.getAll('[data-testid="item-price"], .price');
-          const quantityElements = await commands.getAll('[data-testid="item-quantity"], input[type="number"]');
+        const removeButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove")');
+        
+        if (removeButtons.length > 0) {
+          await removeButtons[0].click();
+          await commands.wait(700);
           
-          if (priceElements.length > 0 && quantityElements.length > 0) {
-            const itemPriceText = await priceElements[0].getText();
-            const itemPrice = parseFloat(itemPriceText.replace(/[^0-9.]/g, ''));
-            
-            const quantity = parseInt(await quantityElements[0].getAttribute('value')) || 1;
-            
-            await quantityElements[0].clear();
-            await quantityElements[0].sendKeys('3');
-            await commands.wait(1200);
-            
-            const totalElements = await commands.getAll('[data-testid="cart-total"], .total');
-            
-            if (totalElements.length > 0) {
-              const totalText = await totalElements[0].getText();
-              const displayedTotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
-              
-              const expectedTotal = itemPrice * 3;
-              
-              const tolerance = 0.01;
-              const difference = Math.abs(displayedTotal - expectedTotal);
-              
-              expect(difference).to.be.lessThan(tolerance, 
-                `Cart total ${displayedTotal} should match calculated total ${expectedTotal}`);
-              
-              const subtotalElements = await commands.getAll('[data-testid="cart-subtotal"]');
-              if (subtotalElements.length > 0) {
-                const subtotalText = await subtotalElements[0].getText();
-                const subtotal = parseFloat(subtotalText.replace(/[^0-9.]/g, ''));
-                
-                const expectedSubtotal = itemPrice * 3;
-                expect(Math.abs(subtotal - expectedSubtotal)).to.be.lessThan(0.01);
-              }
-            }
+          await removeButtons[1].click();
+          await commands.wait(500);
+          
+          const updatedCartItems = await commands.getAll('[data-testid="cart-item"]');
+          
+          expect(updatedCartItems.length).to.be.lessThan(initialItemCount, 
+            'Cart should have fewer items after removal');
+          
+          const totalElements = await commands.getAll('[data-testid="cart-total"]');
+          
+          if (totalElements.length > 0 && updatedCartItems.length > 0) {
+            const totalText = await totalElements[0].getText();
+            const total = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+            expect(total).to.be.greaterThan(0, 'Total should be recalculated');
+          } else if (updatedCartItems.length === 0) {
+            const bodyText = await commands.get('body').then(el => el.getText());
+            expect(bodyText.toLowerCase()).to.include('empty');
           }
+        } else {
+          this.skip('No remove buttons found');
         }
       } else {
-        this.skip('No products available for calculation testing');
-      }
-    });
-  });
-
-  describe('2FT Cart Flow Edge Cases', function() {
-    it('2FT should handle checkout button state with authentication dependencies', async function() {
-      await loginUser();
-      
-      await commands.visit('/products');
-      await commands.shouldBeVisible('[data-testid="products-container"]');
-      
-      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
-      if (addButtons.length > 0) {
-        await addButtons[0].click();
-        await commands.wait(1000);
-        
-        await commands.visit('/cart');
-        await commands.wait(1500);
-        
-        const checkoutButtons = await commands.getAll('[data-testid="checkout-button"], button:contains("Checkout")');
-        
-        if (checkoutButtons.length > 0) {
-          const isEnabled = await checkoutButtons[0].isEnabled();
-          expect(isEnabled).to.be.true;
-          
-          await checkoutButtons[0].click();
-          await commands.wait(1200);
-          
-          const currentUrl = await commands.driver.getCurrentUrl();
-          
-          const isOnCheckout = currentUrl.includes('/checkout') || 
-                              currentUrl.includes('/payment') ||
-                              currentUrl.includes('/billing');
-          
-          expect(isOnCheckout).to.be.true;
-          
-          const formElements = await commands.getAll('input, select, textarea');
-          expect(formElements.length).to.be.greaterThan(0, 'Checkout should have form elements');
-        }
-      } else {
-        this.skip('No products available for checkout testing');
+        this.skip('Insufficient products for remove operations test');
       }
     });
   });

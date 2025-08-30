@@ -1,6 +1,6 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const TestSetup = require('../support/test-setup');
+const TestSetup = require('../../support/test-setup');
 
 describe('🛒 1ELF Cart Dynamic Elements - Selector Dependency Tests', function() {
   this.timeout(60000);

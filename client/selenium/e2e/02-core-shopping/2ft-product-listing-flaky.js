@@ -1,6 +1,6 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const TestSetup = require('../support/test-setup');
+const TestSetup = require('../../support/test-setup');
 
 describe('🛒 2FT Product Listing - Dynamic Content Tests', function() {
   this.timeout(60000);
@@ -241,8 +241,13 @@ describe('🛒 2FT Product Listing - Dynamic Content Tests', function() {
               expect(orderChanged).to.be.true;
               
               if (sortedProducts.length >= 2) {
-                const firstPrice = this.extractPrice(sortedFirstProduct);
-                const secondPrice = this.extractPrice(sortedSecondProduct);
+                const extractPrice = (productText) => {
+                  const priceMatch = productText.match(/\$([0-9,]+\.?[0-9]*)/);
+                  return priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 0;
+                };
+                
+                const firstPrice = extractPrice(sortedFirstProduct);
+                const secondPrice = extractPrice(sortedSecondProduct);
                 
                 if (firstPrice > 0 && secondPrice > 0) {
                   expect(firstPrice).to.be.lessThanOrEqual(secondPrice * 1.1);
@@ -258,9 +263,4 @@ describe('🛒 2FT Product Listing - Dynamic Content Tests', function() {
       }
     });
   });
-
-  extractPrice(productText) {
-    const priceMatch = productText.match(/\$([0-9,]+\.?[0-9]*)/);
-    return priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 0;
-  }
 });

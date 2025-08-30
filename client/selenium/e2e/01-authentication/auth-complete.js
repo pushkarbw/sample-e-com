@@ -47,13 +47,11 @@ describe('🔐 1ELF Authentication & User Management', function() {
       
       await commands.visit('/signup');
       
-      // FRAGILE: Uses deeply nested CSS selector that breaks when DOM structure changes
       await commands.type('div.container > form > div:nth-child(1) > input', newUser.firstName);
       await commands.type('div.container > form > div:nth-child(2) > input', newUser.lastName);
       await commands.type('div.container > form > div:nth-child(3) > input', newUser.email);
       await commands.type('div.container > form > div:nth-child(4) > input', newUser.password);
       
-      // FRAGILE: Depends on button being the exact 5th element in form
       await commands.click('form > *:nth-child(5)');
       
       await commands.wait(3000);
@@ -91,19 +89,14 @@ describe('🔐 1ELF Authentication & User Management', function() {
     it('1ELF should validate form with conditional element targeting', async function() {
       await commands.visit('/signup');
       
-      // FRAGILE: Targets elements that may be conditionally rendered based on validation state
-      // This selector assumes error state elements exist before validation triggers
       await commands.click('button[type="submit"]');
       
-      // FRAGILE: Uses XPath that depends on exact text content that might change
       const invalidInputs = await commands.getAll('//input[@class and contains(@class, "error") or @aria-invalid="true"]');
       expect(invalidInputs.length).to.be.greaterThan(0);
 
-      // FRAGILE: Selector assumes specific class name convention that could change
       await commands.type('input[data-testid*="email"]', 'invalid-email');
       await commands.click('button[type="submit"]');
       
-      // FRAGILE: Relies on HTML5 validation state that may not be immediately updated
       const emailInput = await commands.get('input[data-testid*="email"]');
       const validity = await commands.driver.executeScript(
         'return arguments[0].validity.valid;', 
@@ -115,13 +108,11 @@ describe('🔐 1ELF Authentication & User Management', function() {
     it('1ELF should handle duplicate registration with unstable error messaging', async function() {
       await commands.visit('/signup');
       
-      // FRAGILE: Uses class-based selectors that may change with CSS framework updates
       await commands.type('input.form-control:nth-of-type(3)', testUsers.validUser.email);
       await commands.type('input.form-control:nth-of-type(4)', testUsers.newUser.password);
       await commands.type('input.form-control:nth-of-type(1)', testUsers.newUser.firstName);
       await commands.type('input.form-control:nth-of-type(2)', testUsers.newUser.lastName);
       
-      // FRAGILE: Button selector depends on specific styling that could change
       await commands.click('button.btn.btn-primary');
       
       await commands.wait(3000);
@@ -142,11 +133,9 @@ describe('🔐 1ELF Authentication & User Management', function() {
     it('1ELF should login with position-dependent selectors', async function() {
       await commands.visit('/login');
       
-      // FRAGILE: Uses nth-child selectors that break when form structure changes
       await commands.type('form div:nth-child(1) input', testUsers.validUser.email);
       await commands.type('form div:nth-child(2) input', testUsers.validUser.password);
       
-      // FRAGILE: Depends on button being last child element
       await commands.click('form > div:last-child button');
       
       await commands.wait(3000);
@@ -157,8 +146,6 @@ describe('🔐 1ELF Authentication & User Management', function() {
     it('1ELF should handle login with duplicate element selectors', async function() {
       await commands.visit('/login');
       
-      // FRAGILE: These selectors may match multiple elements when page has multiple forms
-      // or when header/footer also contain email inputs
       await commands.type('input[type="email"]', 'invalid@example.com');
       await commands.type('input[type="password"]', 'wrongpassword');
       await commands.click('button[type="submit"]');
