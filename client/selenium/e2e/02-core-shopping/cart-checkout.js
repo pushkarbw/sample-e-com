@@ -608,4 +608,177 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
   });
+
+  describe('5NF API Network Dependency Failures', function() {
+    it('5NF should handle cart operations when API returns malformed JSON', async function() {
+      await loginUser();
+      
+      await commands.driver.executeScript(`
+        // Mock cart API to return malformed JSON
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/cart') && options && options.method === 'POST') {
+              return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                  // Malformed response - missing required cart structure
+                  message: "success",
+                  items: "invalid_structure",
+                  total: null
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/products');
+      await commands.wait(2000);
+
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        await addButtons[0].click();
+        await commands.wait(2000);
+
+        const cartBadge = await commands.getAll('[data-testid="cart-badge"], .cart-count');
+        expect(cartBadge.length).to.be.greaterThan(0, 'Cart badge should still be present');
+
+        await commands.visit('/cart');
+        await commands.wait(2000);
+
+        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        expect(cartItems.length).to.be.greaterThan(0, 'Should display cart items despite malformed API response');
+
+        const productNames = await commands.getAll('h3, .product-name, [data-testid="product-name"]');
+        expect(productNames.length).to.be.greaterThan(0, 'Product names should be visible');
+
+        const itemPrices = await commands.getAll('.price, [data-testid="price"]');
+        expect(itemPrices.length).to.be.greaterThan(0, 'Item prices should be displayed');
+      } else {
+        this.skip('No add to cart buttons available');
+      }
+    });
+
+    it('5NF should proceed with checkout when order creation API fails', async function() {
+      await loginUser();
+      
+      await commands.visit('/products');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        await addButtons[0].click();
+        await commands.wait(1000);
+      }
+
+      await commands.driver.executeScript(`
+        // Mock order API to return failure
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/orders') && options && options.method === 'POST') {
+              return Promise.resolve({
+                ok: false,
+                status: 500,
+                json: () => Promise.resolve({
+                  error: 'Order processing temporarily unavailable',
+                  code: 'ORDER_SERVICE_DOWN'
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/checkout');
+      await commands.wait(2000);
+
+      const nameFields = await commands.getAll('input[name*="name"], input[name*="firstName"]');
+      if (nameFields.length > 0) {
+        await nameFields[0].sendKeys('Test User');
+      }
+
+      const addressFields = await commands.getAll('input[name*="address"], input[name*="street"]');
+      if (addressFields.length > 0) {
+        await addressFields[0].sendKeys('123 Main Street');
+      }
+
+      const cityFields = await commands.getAll('input[name*="city"]');
+      if (cityFields.length > 0) {
+        await cityFields[0].sendKeys('Test City');
+      }
+
+      const zipFields = await commands.getAll('input[name*="zip"], input[name*="postal"]');
+      if (zipFields.length > 0) {
+        await zipFields[0].sendKeys('12345');
+      }
+
+      const submitButtons = await commands.getAll('button[type="submit"], button:contains("Place Order")');
+      if (submitButtons.length > 0) {
+        await submitButtons[0].click();
+        await commands.wait(4000);
+
+        const confirmationPage = await commands.getAll('.order-confirmation, .success, .confirmation');
+        expect(confirmationPage.length).to.be.greaterThan(0, 'Should show confirmation despite API failure');
+
+        const orderNumber = await commands.getAll('.order-number, .reference-number');
+        expect(orderNumber.length).to.be.greaterThan(0, 'Should generate order number locally');
+
+        const retryButton = await commands.getAll('button:contains("Retry"), .retry-order');
+        expect(retryButton.length).to.be.greaterThan(0, 'Should offer retry option');
+      } else {
+        this.skip('No submit button found in checkout form');
+      }
+    });
+
+    it('5NF should display cart total when calculation API is down', async function() {
+      await loginUser();
+      
+      await commands.visit('/products');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length >= 2) {
+        await addButtons[0].click();
+        await commands.wait(500);
+        await addButtons[1].click();
+        await commands.wait(1000);
+      }
+
+      await commands.driver.executeScript(`
+        // Mock cart total calculation API to fail
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/cart/total') || url.includes('/api/calculate-total')) {
+              return Promise.reject(new Error('Calculation service unavailable'));
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/cart');
+      await commands.wait(2000);
+
+      const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+      expect(cartItems.length).to.be.greaterThan(0, 'Cart items should be visible');
+
+      const itemPrices = await commands.getAll('.item-price, [data-testid="item-price"]');
+      expect(itemPrices.length).to.be.greaterThan(0, 'Individual item prices should display');
+
+      const cartTotal = await commands.getAll('[data-testid="cart-total"], .cart-total, .total');
+      expect(cartTotal.length).to.be.greaterThan(0, 'Cart total should be calculated locally');
+
+      if (cartTotal.length > 0) {
+        const totalText = await cartTotal[0].getText();
+        const totalAmount = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+        expect(totalAmount).to.be.greaterThan(0, 'Total amount should be greater than zero');
+      }
+
+      const checkoutButton = await commands.getAll('button:contains("Checkout"), [data-testid="checkout-button"]');
+      expect(checkoutButton.length).to.be.greaterThan(0, 'Checkout button should remain enabled');
+      expect(await checkoutButton[0].isEnabled()).to.be.true;
+    });
+  });
 });

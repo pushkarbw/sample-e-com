@@ -443,4 +443,332 @@ describe('🔗 API Integration & Backend Communication', function() {
       ).to.be.true;
     });
   });
+
+  describe('5NF Network Dependency Simulation Failures', function() {
+    it('5NF should handle product search when backend returns corrupted data', async function() {
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+
+      await commands.driver.executeScript(`
+        // Simulate corrupted search API response
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/products') && url.includes('search')) {
+              return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                  // Corrupted response structure
+                  data: {
+                    products: "not_an_array",
+                    pagination: { current: "invalid" },
+                    total: null
+                  }
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      const searchInput = await commands.getAll('input[placeholder*="Search"], input[name*="search"]');
+      if (searchInput.length > 0) {
+        await searchInput[0].sendKeys('laptop');
+        
+        const searchButton = await commands.getAll('button:contains("Search")');
+        if (searchButton.length > 0) {
+          await searchButton[0].click();
+        } else {
+          await searchInput[0].sendKeys('\n');
+        }
+
+        await commands.wait(2000);
+
+        const searchResults = await commands.getAll('[data-testid="product-card"], .product');
+        expect(searchResults.length).to.be.greaterThan(0, 'Should show search results despite corrupted API');
+
+        const resultText = await commands.get('body').then(el => el.getText());
+        expect(resultText.toLowerCase()).to.include('laptop', 'Search term should be visible');
+      } else {
+        this.skip('Search functionality not available');
+      }
+    });
+
+    it('5NF should authenticate user when auth service returns partial data', async function() {
+      await commands.driver.executeScript(`
+        // Simulate auth API returning incomplete user data
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/auth/login') && options && options.method === 'POST') {
+              return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                  // Incomplete auth response
+                  success: true,
+                  token: "partial_token_12345",
+                  user: {
+                    id: undefined,
+                    email: "john@example.com",
+                    name: null
+                  }
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/login');
+      await commands.type('input[type="email"]', testConfig.defaultUser.email);
+      await commands.type('input[type="password"]', testConfig.defaultUser.password);
+      await commands.click('button[type="submit"]');
+
+      await commands.wait(3000);
+
+      const currentUrl = await commands.driver.getCurrentUrl();
+      expect(currentUrl).to.not.include('/login', 'Should redirect away from login despite partial data');
+
+      await commands.visit('/profile');
+      const profileContent = await commands.get('body').then(el => el.getText());
+      expect(profileContent.toLowerCase()).to.satisfy((text) => {
+        return text.includes('profile') || text.includes('account') || text.includes('user');
+      }, 'Profile page should load with fallback user data');
+
+      const userGreeting = await commands.getAll('.user-name, .greeting, [data-testid="user-info"]');
+      if (userGreeting.length > 0) {
+        const greetingText = await userGreeting[0].getText();
+        expect(greetingText).to.satisfy((text) => {
+          return text.includes('john@example.com') || text.includes('User') || text.includes('Welcome');
+        }, 'Should display user information even with incomplete data');
+      }
+    });
+
+    it('5NF should display cart when inventory API provides inconsistent stock data', async function() {
+      await commands.visit('/login');
+      await commands.type('input[type="email"]', testConfig.defaultUser.email);
+      await commands.type('input[type="password"]', testConfig.defaultUser.password);
+      await commands.click('button[type="submit"]');
+      await commands.wait(2000);
+
+      await commands.driver.executeScript(`
+        // Simulate inconsistent inventory API responses
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/products') && url.includes('stock')) {
+              return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                  success: true,
+                  data: {
+                    // Inconsistent stock data
+                    stock: -5,
+                    available: "maybe",
+                    reserved: null,
+                    lastUpdated: "invalid_date"
+                  }
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/products');
+      await commands.wait(2000);
+
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        for (let i = 0; i < Math.min(2, addButtons.length); i++) {
+          await addButtons[i].click();
+          await commands.wait(500);
+        }
+
+        await commands.visit('/cart');
+        await commands.wait(2000);
+
+        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        expect(cartItems.length).to.be.greaterThan(0, 'Cart should display items despite stock inconsistencies');
+
+        const stockWarnings = await commands.getAll('.stock-warning, .availability-notice');
+        expect(stockWarnings.length).to.equal(0, 'Should not show confusing stock warnings');
+
+        const quantityControls = await commands.getAll('input[type="number"], .quantity-selector');
+        if (quantityControls.length > 0) {
+          await quantityControls[0].clear();
+          await quantityControls[0].sendKeys('10');
+
+          const updateButton = await commands.getAll('button:contains("Update")');
+          if (updateButton.length > 0) {
+            await updateButton[0].click();
+            await commands.wait(1000);
+
+            const finalQuantity = await quantityControls[0].getAttribute('value');
+            expect(parseInt(finalQuantity)).to.equal(10, 
+              'Should allow quantity updates regardless of inconsistent stock data');
+          }
+        }
+      } else {
+        this.skip('No add to cart functionality available');
+      }
+    });
+
+    it('5NF should complete checkout when payment validation API times out', async function() {
+      await commands.visit('/login');
+      await commands.type('input[type="email"]', testConfig.defaultUser.email);
+      await commands.type('input[type="password"]', testConfig.defaultUser.password);
+      await commands.click('button[type="submit"]');
+      await commands.wait(2000);
+
+      await commands.visit('/products');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
+      if (addButtons.length > 0) {
+        await addButtons[0].click();
+        await commands.wait(1000);
+      }
+
+      await commands.driver.executeScript(`
+        // Simulate payment validation timeout
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/payment/validate') || url.includes('/api/validate-card')) {
+              return new Promise((resolve) => {
+                // Never resolves - simulates timeout
+                setTimeout(() => {
+                  resolve({
+                    ok: false,
+                    status: 408,
+                    json: () => Promise.resolve({
+                      error: 'Payment validation timeout'
+                    })
+                  });
+                }, 10000);
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/checkout');
+      await commands.wait(2000);
+
+      const billingInputs = await commands.getAll('input[name*="name"], input[name*="billing"]');
+      if (billingInputs.length > 0) {
+        await billingInputs[0].sendKeys('John Doe');
+      }
+
+      const addressInputs = await commands.getAll('input[name*="address"]');
+      if (addressInputs.length > 0) {
+        await addressInputs[0].sendKeys('456 Payment Street');
+      }
+
+      const paymentFields = await commands.getAll('input[name*="card"], input[placeholder*="card"]');
+      if (paymentFields.length > 0) {
+        await paymentFields[0].sendKeys('4111111111111111');
+        
+        const expiryField = await commands.getAll('input[name*="expiry"], input[placeholder*="expiry"]');
+        if (expiryField.length > 0) {
+          await expiryField[0].sendKeys('12/25');
+        }
+
+        const cvvField = await commands.getAll('input[name*="cvv"], input[placeholder*="cvv"]');
+        if (cvvField.length > 0) {
+          await cvvField[0].sendKeys('123');
+        }
+      }
+
+      const submitButton = await commands.getAll('button[type="submit"], button:contains("Place Order")');
+      if (submitButton.length > 0) {
+        await submitButton[0].click();
+        await commands.wait(5000);
+
+        const orderConfirmation = await commands.getAll('.order-success, .confirmation, .thank-you');
+        expect(orderConfirmation.length).to.be.greaterThan(0, 
+          'Should show order confirmation despite payment validation timeout');
+
+        const orderReference = await commands.getAll('.order-id, .reference-number, .confirmation-number');
+        expect(orderReference.length).to.be.greaterThan(0, 'Should provide order reference');
+
+        const pendingNotice = await commands.getAll('.pending-payment, .payment-processing');
+        if (pendingNotice.length > 0) {
+          const noticeText = await pendingNotice[0].getText();
+          expect(noticeText.toLowerCase()).to.satisfy((text) => {
+            return text.includes('pending') || text.includes('processing') || text.includes('verify');
+          }, 'Should indicate payment processing status');
+        }
+      } else {
+        this.skip('Checkout form not accessible');
+      }
+    });
+
+    it('5NF should handle order history when database connection is unstable', async function() {
+      await commands.visit('/login');
+      await commands.type('input[type="email"]', testConfig.defaultUser.email);
+      await commands.type('input[type="password"]', testConfig.defaultUser.password);
+      await commands.click('button[type="submit"]');
+      await commands.wait(2000);
+
+      await commands.driver.executeScript(`
+        // Simulate unstable database connection for orders
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          let callCount = 0;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/orders') && (!options || options.method === 'GET')) {
+              callCount++;
+              if (callCount % 2 === 0) {
+                return Promise.reject(new Error('Database connection lost'));
+              } else {
+                return Promise.resolve({
+                  ok: true,
+                  status: 200,
+                  json: () => Promise.resolve({
+                    success: true,
+                    data: {
+                      orders: [],
+                      total: 0,
+                      message: "No orders found"
+                    }
+                  })
+                });
+              }
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/orders');
+      await commands.wait(3000);
+
+      const ordersContent = await commands.get('body').then(el => el.getText());
+      expect(ordersContent.toLowerCase()).to.satisfy((text) => {
+        return text.includes('order') || text.includes('history') || 
+               text.includes('empty') || text.includes('no orders');
+      }, 'Orders page should display meaningful content despite database issues');
+
+      const retryButton = await commands.getAll('button:contains("Retry"), button:contains("Refresh")');
+      if (retryButton.length > 0) {
+        await retryButton[0].click();
+        await commands.wait(2000);
+
+        const refreshedContent = await commands.get('body').then(el => el.getText());
+        expect(refreshedContent.toLowerCase()).to.include('order', 
+          'Should show order-related content after retry');
+      }
+
+      const loadingIndicator = await commands.getAll('.loading, .spinner, [data-testid="loading"]');
+      expect(loadingIndicator.length).to.equal(0, 
+        'Should not show indefinite loading states due to connection issues');
+    });
+  });
 });

@@ -1,7 +1,7 @@
 # Removed Comments Summary Report
 ## Test Case Comment Removal Analysis
 **Generated on:** August 29, 2025  
-**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF
+**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF, 4BDCF
 
 ---
 
@@ -539,51 +539,333 @@
 - Comments about password update timing (250ms wait)
 - Notes about password validation timing assumptions
 
----
+## Browser/Device-Specific Compatibility Test Files
 
-## Summary Statistics
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-css-rendering-compatibility.js`
 
-**Total Test Files Processed:** 9
-**Total Test Cases with Comments Removed:** 45
-- Selenium Tests: 32 test cases
-- Cypress Tests: 13 test cases
+#### Test: "4BDCF should display add to cart buttons without overflow clipping"
+**Browser Compatibility Issue:** CSS overflow and button visibility differences between Chrome, Firefox, and Safari. Chrome may handle flexbox overflow differently than Safari, causing button clipping in certain viewport sizes.
 
-**Comment Categories Removed:**
-1. **Timing Dependencies** (Most common)
-   - API response timing issues
-   - DOM update timing problems
-   - Authentication state timing
-   - Form validation timing
+#### Test: "4BDCF should render product cards with consistent flex layout"
+**Browser Compatibility Issue:** Flexbox layout calculations vary between browsers, particularly in how minimum height and flex-grow properties are interpreted. Safari may render different heights compared to Chrome/Firefox.
 
-2. **Race Conditions**
-   - Rapid user interactions
-   - Concurrent API calls
-   - DOM update races
-   - State change conflicts
+#### Test: "4BDCF should display cart badge with proper z-index layering"
+**Browser Compatibility Issue:** Z-index stacking context handling differs between browsers. Firefox may create different stacking contexts compared to Chrome, affecting badge positioning.
 
-3. **Selector Brittleness**
-   - CSS selector dependencies
-   - XPath position dependencies
-   - State-dependent selectors
-   - Conditional element rendering
+#### Test: "4BDCF should render form inputs with consistent styling across browsers"
+**Browser Compatibility Issue:** Default form input styling varies significantly between browsers. Safari applies different default padding and border-radius compared to Chrome and Firefox.
 
-4. **Assertion Timing**
-   - Premature assertions
-   - Insufficient wait times
-   - State verification timing
-   - Content loading timing
+#### Test: "4BDCF should display search input with proper placeholder alignment"
+**Browser Compatibility Issue:** Placeholder text alignment and line-height calculations differ between browsers. Firefox may render placeholder text with different vertical alignment than Chrome.
 
-5. **API Integration Issues**
-   - API response timing
-   - Data availability timing
-   - Backend synchronization
-   - Network condition variations
+#### Test: "4BDCF should render modal dialogs with proper backdrop positioning"
+**Browser Compatibility Issue:** Modal centering calculations and backdrop positioning vary between browsers. Safari may handle viewport units differently in modal positioning.
 
-**File Size Impact:**
-- Removed approximately 2,000+ lines of explanatory comments
-- Reduced file complexity while maintaining test functionality
-- Improved code readability by removing flaky test documentation
+#### Test: "4BDCF should maintain product grid alignment across different screen sizes"
+**Browser Compatibility Issue:** CSS Grid and Flexbox gap properties are handled differently across browsers. Older Safari versions may not support gap property consistently.
+
+#### Test: "4BDCF should render product prices with consistent decimal alignment"
+**Browser Compatibility Issue:** Font rendering and text alignment varies between browsers. Safari may render fonts with different baseline alignment affecting decimal point positioning.
 
 ---
 
-**Note:** All test functionality remains intact. Only explanatory comments describing flaky behavior, timing issues, and brittle test patterns were removed. The actual test logic and assertions remain unchanged.
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-javascript-api-compatibility.js`
+
+#### Test: "4BDCF should handle dynamic cart layout changes with ResizeObserver"
+**Browser Compatibility Issue:** ResizeObserver API support varies across browsers. Safari 13 and below don't support ResizeObserver, requiring polyfills for layout change detection.
+
+#### Test: "4BDCF should implement lazy loading with IntersectionObserver fallback"
+**Browser Compatibility Issue:** IntersectionObserver support differs in older browsers. Internet Explorer and older Safari versions require fallback mechanisms for image lazy loading.
+
+#### Test: "4BDCF should handle cart persistence with storage API differences"
+**Browser Compatibility Issue:** LocalStorage and SessionStorage behavior varies in private browsing modes. Safari in private mode throws exceptions when accessing localStorage.
+
+#### Test: "4BDCF should handle API requests with proper fallback mechanisms"
+**Browser Compatibility Issue:** Fetch API support is missing in Internet Explorer. XMLHttpRequest fallbacks are required for older browser compatibility.
+
+#### Test: "4BDCF should handle arrow functions and template literals gracefully"
+**Browser Compatibility Issue:** ES6 features like arrow functions and template literals are not supported in Internet Explorer and older Safari versions, requiring ES5 fallbacks.
+
+#### Test: "4BDCF should handle Promise API with appropriate fallbacks"
+**Browser Compatibility Issue:** Promise API is not natively supported in Internet Explorer, requiring polyfills or callback-based implementations.
+
+#### Test: "4BDCF should handle Notification API with permission handling"
+**Browser Compatibility Issue:** Notification API support and permission handling varies significantly between browsers. Safari requires different permission request patterns than Chrome.
+
+---
+
+### File: `/client/cypress/e2e/05-cross-browser/4bdcf-device-compatibility.cy.js`
+
+#### Test: "4BDCF should handle touch events for mobile cart interactions"
+**Browser Compatibility Issue:** Touch event handling differs between mobile Safari and Android Chrome. Safari may require different touch event sequences for proper interaction.
+
+#### Test: "4BDCF should handle iOS-specific form input behavior"
+**Browser Compatibility Issue:** iOS Safari applies auto-capitalization and auto-correction to form inputs unless explicitly disabled with autocapitalize and autocorrect attributes.
+
+#### Test: "4BDCF should handle Android-specific scroll momentum and product grid"
+**Browser Compatibility Issue:** Android browsers handle scroll momentum and touch scrolling differently than iOS. Android may have different scroll event timing and momentum calculations.
+
+#### Test: "4BDCF should handle Android keyboard input with different IME behavior"
+**Browser Compatibility Issue:** Android Input Method Editor (IME) behavior for international keyboards differs from iOS. Composition events may fire differently affecting search functionality.
+
+#### Test: "4BDCF should handle data attribute case differences between browsers"
+**Browser Compatibility Issue:** XHTML and older Internet Explorer handle attribute case sensitivity differently. Data attributes may be case-sensitive in some browsers but not others.
+
+#### Test: "4BDCF should handle CSS class name case sensitivity properly"
+**Browser Compatibility Issue:** CSS class name matching is case-sensitive in all browsers, but some legacy systems may normalize differently affecting style application.
+
+#### Test: "4BDCF should handle form input name attribute case variations"
+**Browser Compatibility Issue:** FormData API and form submission handle input name attribute case differently across browsers, affecting form data collection.
+
+#### Test: "4BDCF should handle mouse vs touch event precedence correctly"
+**Browser Compatibility Issue:** Touch devices may fire both touch and mouse events, but the order and timing differ between browsers. Safari and Chrome handle event precedence differently.
+
+#### Test: "4BDCF should handle keyboard navigation differences across browsers"
+**Browser Compatibility Issue:** Tab navigation and focus management behavior varies between browsers. Firefox and Safari handle focus ring and tab order differently than Chrome.
+
+#### Test: "4BDCF should handle viewport meta tag differences on mobile browsers"
+**Browser Compatibility Issue:** Viewport meta tag interpretation varies between mobile browsers. Safari and Chrome may handle device-width and scaling differently.
+
+#### Test: "4BDCF should handle orientation change events properly"
+**Browser Compatibility Issue:** Orientation change event support and timing differs between mobile browsers. Some browsers may not support the orientation API consistently.
+
+---
+
+### File: `/client/cypress/e2e/05-cross-browser/4bdcf-form-input-compatibility.cy.js`
+
+#### Test: "4BDCF should handle email input validation differences across browsers"
+**Browser Compatibility Issue:** HTML5 email input validation patterns and error messages vary significantly between browsers. Firefox, Safari, and Chrome implement different validation rules.
+
+#### Test: "4BDCF should handle number input step behavior consistently"
+**Browser Compatibility Issue:** Number input step validation and increment/decrement behavior differs between browsers. Chrome is more strict about step validation than Firefox.
+
+#### Test: "4BDCF should handle date input fallback behavior"
+**Browser Compatibility Issue:** HTML5 date input support varies widely. Safari and older browsers may not support date inputs, requiring fallback text inputs or date pickers.
+
+#### Test: "4BDCF should handle browser autofill suggestions consistently"
+**Browser Compatibility Issue:** Autofill and autocomplete behavior differs significantly between browsers. Chrome, Firefox, and Safari have different autofill suggestion patterns and timing.
+
+#### Test: "4BDCF should handle address autocomplete with regional differences"
+**Browser Compatibility Issue:** Address autocomplete patterns vary by browser locale and regional settings. US vs UK address formats are handled differently across browsers.
+
+#### Test: "4BDCF should handle file input accept attribute differences"
+**Browser Compatibility Issue:** File input accept attribute interpretation varies between browsers. Safari may handle MIME type wildcards differently than Chrome and Firefox.
+
+#### Test: "4BDCF should handle drag and drop file upload compatibility"
+**Browser Compatibility Issue:** Drag and drop API support and FileReader API availability differs across browsers. Internet Explorer requires different drag and drop handling.
+
+#### Test: "4BDCF should handle custom validation messages across browsers"
+**Browser Compatibility Issue:** Custom validation message support and display timing varies between browsers. Safari and Firefox handle setCustomValidity differently than Chrome.
+
+#### Test: "4BDCF should handle form submission validation timing differences"
+**Browser Compatibility Issue:** Form validation timing and invalid event firing differs between browsers. Safari may validate on different events than Chrome and Firefox.
+
+#### Test: "4BDCF should handle placeholder text rendering differences"
+**Browser Compatibility Issue:** Placeholder text styling and visibility during focus varies between browsers. Internet Explorer and older browsers may not support placeholder attributes.
+
+#### Test: "4BDCF should handle label association behavior consistently"
+**Browser Compatibility Issue:** Label click behavior and focus management differs between browsers. Internet Explorer may handle label-for associations differently than modern browsers.
+
+---
+
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-mobile-device-compatibility.js`
+
+#### Test: "4BDCF should handle iOS Safari viewport zoom restrictions properly"
+**Browser Compatibility Issue:** iOS Safari handles viewport zoom restrictions and user-scalable settings differently than other mobile browsers. Safari may ignore certain viewport meta tag properties.
+
+#### Test: "4BDCF should handle touch events with proper preventDefault behavior"
+**Browser Compatibility Issue:** Touch event preventDefault behavior and passive event listener support differs between mobile browsers. Safari and Chrome handle touch event bubbling differently.
+
+#### Test: "4BDCF should handle Korean/Chinese input method with composition events"
+**Browser Compatibility Issue:** Input Method Editor (IME) composition events for Asian languages are handled differently across browsers. Android Chrome vs iOS Safari have different composition event timing.
+
+#### Test: "4BDCF should handle virtual keyboard visibility detection"
+**Browser Compatibility Issue:** Virtual keyboard visibility detection methods vary between mobile browsers. iOS Safari and Android Chrome provide different viewport resize behavior when keyboards appear.
+
+#### Test: "4BDCF should handle landscape to portrait orientation changes"
+**Browser Compatibility Issue:** Orientation change event timing and viewport dimension updates differ between tablet browsers. iPad Safari vs Android tablet browsers handle orientation differently.
+
+#### Test: "4BDCF should handle CPU throttling and animation frame timing"
+**Browser Compatibility Issue:** RequestAnimationFrame timing and performance throttling varies between mobile browsers. Different devices and browsers may throttle differently affecting animation performance.
+
+#### Test: "4BDCF should handle network throttling simulation for mobile connections"
+**Browser Compatibility Issue:** Network timing and connection speed detection varies between mobile browsers. Different browsers may cache and handle slow connections differently.
+
+#### Test: "4BDCF should apply correct styles for high-DPI mobile displays"
+**Browser Compatibility Issue:** High-DPI display support and devicePixelRatio handling varies between mobile browsers. Different browsers may interpret media queries for retina displays differently.
+
+#### Test: "4BDCF should handle pointer coarse/fine media query differences"
+**Browser Compatibility Issue:** CSS pointer media queries (coarse/fine) and hover detection support varies between browsers. Touch device detection and hover capability reporting differs across platforms.
+
+---
+
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-layout-engine-compatibility.js`
+
+#### Test: "4BDCF should handle product grid gap calculations consistently"
+**Browser Compatibility Issue:** CSS Grid gap property support varies between browsers. Safari versions before 12 don't support the gap property, while Chrome and Firefox handle gap calculations differently for auto-fit columns. Firefox may render slightly different gap spacing compared to Chrome, particularly when grid items have different content lengths.
+
+#### Test: "4BDCF should maintain consistent flexbox wrap behavior across viewports"
+**Browser Compatibility Issue:** Flexbox justify-content: space-between calculations differ between browsers when items wrap to new lines. Safari may distribute remaining space differently than Chrome/Firefox, especially when flex items have varying content. Edge browser historically had different flex-wrap behavior.
+
+#### Test: "4BDCF should render custom font fallbacks with consistent metrics"
+**Browser Compatibility Issue:** Font fallback rendering and font-display property support varies across browsers. Safari handles font loading differently than Chrome, potentially showing FOIT (Flash of Invisible Text) vs FOUT (Flash of Unstyled Text). Line height calculations may differ between browsers when fonts fail to load.
+
+#### Test: "4BDCF should handle text overflow and ellipsis consistently"
+**Browser Compatibility Issue:** Text overflow ellipsis rendering differs between browsers. Firefox may show ellipsis at different character positions than Chrome/Safari. Internet Explorer and older Edge versions handle white-space: nowrap differently, affecting where text truncation occurs.
+
+#### Test: "4BDCF should handle CSS transforms with vendor prefix fallbacks"
+**Browser Compatibility Issue:** CSS transform support and matrix calculations vary between browsers. Older Safari versions required -webkit- prefixes. Transform scale calculations may result in slightly different pixel values between browsers due to different rendering engines.
+
+#### Test: "4BDCF should handle viewport units with consistent behavior"
+**Browser Compatibility Issue:** Viewport units (vh, vw) support and calculation differences between browsers. Mobile Safari treats viewport units differently than other mobile browsers, particularly with dynamic viewport changes. Android browsers may handle viewport units inconsistently.
+
+#### Test: "4BDCF should handle CSS filters with graceful degradation"
+**Browser Compatibility Issue:** CSS filter property support varies widely. Internet Explorer doesn't support CSS filters. Safari and Firefox may render filter effects with different performance characteristics. Older browsers require fallback opacity effects.
+
+#### Test: "4BDCF should handle backdrop blur effects with fallback behavior"
+**Browser Compatibility Issue:** Backdrop-filter property has limited browser support. Only supported in newer Chrome/Safari versions. Firefox doesn't support backdrop-filter. Requires fallback to regular background colors or alternative blur techniques.
+
+---
+
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-dom-attribute-compatibility.js`
+
+#### Test: "4BDCF should handle product data attributes consistently across browsers"
+**Browser Compatibility Issue:** Data attribute case sensitivity and dataset property access varies between browsers. Internet Explorer handles data attribute case differently than modern browsers. Dataset property normalization rules differ between browser engines.
+
+#### Test: "4BDCF should handle form input name attributes with case variations"
+**Browser Compatibility Issue:** Form data collection and name attribute case sensitivity varies between browsers. FormData API handles attribute case differently across browsers. Internet Explorer may normalize form field names differently than modern browsers.
+
+#### Test: "4BDCF should handle CSS class matching with case sensitivity"
+**Browser Compatibility Issue:** CSS class name matching is case-sensitive in all browsers, but some legacy systems may handle classList operations differently. Internet Explorer's classList implementation differs from modern browsers in edge cases.
+
+#### Test: "4BDCF should handle querySelector with case-sensitive selectors"
+**Browser Compatibility Issue:** CSS selector case sensitivity and attribute matching varies between browsers. Internet Explorer may handle attribute selectors with different case sensitivity rules. XPath selectors have different case sensitivity behavior than CSS selectors.
+
+#### Test: "4BDCF should handle event listener registration with case variations"
+**Browser Compatibility Issue:** Event name case sensitivity varies between browsers. Internet Explorer uses different event names (e.g., 'onclick' vs 'Click'). Modern browsers are case-sensitive for event names, but legacy browsers may accept case variations.
+
+#### Test: "4BDCF should handle DOM property access with case sensitivity"
+**Browser Compatibility Issue:** DOM property names and attribute access case sensitivity differs between browsers. Internet Explorer may expose properties with different case than standard browsers. Custom attributes may be normalized differently across browsers.
+
+#### Test: "4BDCF should handle HTML tag case sensitivity in dynamic content"
+**Browser Compatibility Issue:** HTML tag name case handling varies between browsers in HTML vs XHTML mode. Internet Explorer may handle uppercase tag names differently. Document.createElement behavior with case variations differs between browsers.
+
+#### Test: "4BDCF should handle attribute value matching with case sensitivity"
+**Browser Compatibility Issue:** CSS attribute selector case sensitivity support varies. Modern browsers support the 'i' flag for case-insensitive matching, but older browsers don't. Internet Explorer handles attribute value case matching differently.
+
+---
+
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-javascript-api-modern-compatibility.js`
+
+#### Test: "4BDCF should format product prices using Intl.NumberFormat consistently"
+**Browser Compatibility Issue:** Intl.NumberFormat API support and locale formatting behavior varies between browsers. Safari may format currencies differently than Chrome/Firefox. Internet Explorer doesn't support Intl API. Different browsers may use different locale data for formatting.
+
+#### Test: "4BDCF should handle date formatting with Intl.DateTimeFormat across locales"
+**Browser Compatibility Issue:** Intl.DateTimeFormat locale support and formatting output differs between browsers. Safari and Chrome may use different locale databases. Time zone handling and DST calculations vary between browsers. Internet Explorer lacks Intl support entirely.
+
+#### Test: "4BDCF should handle optional chaining in product data access"
+**Browser Compatibility Issue:** Optional chaining operator (?.) is not supported in Internet Explorer and older browser versions. Safari versions before 13.1 don't support optional chaining. Requires transpilation or fallback code for older browsers.
+
+#### Test: "4BDCF should handle nullish coalescing operator in form validation"
+**Browser Compatibility Issue:** Nullish coalescing operator (??) is not supported in Internet Explorer and older browsers. Safari versions before 13.1 don't support this operator. Different from logical OR (||) behavior, requires polyfills for older browser support.
+
+#### Test: "4BDCF should handle BigInt for large product IDs or transaction amounts"
+**Browser Compatibility Issue:** BigInt is not supported in Internet Explorer and older browser versions. Safari support came in version 14. Different browsers may have different maximum BigInt sizes. JSON serialization of BigInt values differs between browsers.
+
+#### Test: "4BDCF should handle Array.prototype.flatMap for product category flattening"
+**Browser Compatibility Issue:** Array.flatMap method is not supported in Internet Explorer and older browsers. Safari support came in version 12. Edge Legacy doesn't support flatMap. Requires polyfills or fallback implementations for older browsers.
+
+#### Test: "4BDCF should handle String.prototype.matchAll for product search parsing"
+**Browser Compatibility Issue:** String.matchAll method is not supported in Internet Explorer and older browsers. Safari support came in version 13. Firefox added support in version 67. Requires polyfills or fallback regex implementations.
+
+---
+
+### File: `/client/selenium/e2e/05-cross-browser/4bdcf-computed-styles-compatibility.js`
+
+#### Test: "4BDCF should calculate flex item dimensions consistently across browsers"
+**Browser Compatibility Issue:** Flexbox dimension calculations vary between browser engines. Safari may calculate flex-basis differently than Chrome/Firefox. Gap property support in flexbox varies between browsers. Flex item width calculations may differ by 1-2 pixels between browsers.
+
+#### Test: "4BDCF should handle flex direction changes with proper dimension recalculation"
+**Browser Compatibility Issue:** Flexbox direction changes trigger different reflow behavior in different browsers. Safari may handle flex-direction changes with different timing than Chrome. Internet Explorer has known flexbox bugs that affect dimension calculations.
+
+#### Test: "4BDCF should calculate line height and font metrics consistently"
+**Browser Compatibility Issue:** Font metric calculations and line height rendering differs between browser engines. Safari and Chrome may calculate font baselines differently. Canvas measureText API results vary between browsers for the same font specifications.
+
+#### Test: "4BDCF should handle font weight and style computed values correctly"
+**Browser Compatibility Issue:** Font weight normalization varies between browsers. Internet Explorer may not support numeric font weights consistently. Font style computed values may be reported differently (e.g., 'normal' vs '400' for font-weight).
+
+#### Test: "4BDCF should calculate border-radius with consistent rendering"
+**Browser Compatibility Issue:** Border-radius calculations and box model interactions vary between browsers. Safari may render border-radius differently when combined with borders and padding. Internet Explorer has different border-radius rendering behavior.
+
+#### Test: "4BDCF should handle box-shadow and outline calculations consistently"
+**Browser Compatibility Issue:** Box-shadow and outline rendering differs between browsers. Safari may handle outline-offset differently than Chrome/Firefox. Internet Explorer doesn't support outline-offset. Shadow blur calculations may vary between rendering engines.
+
+#### Test: "4BDCF should calculate transform matrix values consistently"
+**Browser Compatibility Issue:** CSS transform matrix calculations and precision vary between browsers. Safari may calculate transform matrices with different floating-point precision than Chrome. Transform-origin calculations may differ by fractional pixels between browsers.
+
+---
+
+## 5NF Network API Failure Test Suite
+
+### Test File: `/client/selenium/e2e/02-core-shopping/5nf-network-api-failures.js`
+
+**5NF should validate product grid when API returns empty** - Test expects products to display from cache/local storage when products API returns empty response, but implementation may not have offline capability leading to blank product grid
+
+**5NF should handle search results when API is unavailable** - Test assumes search functionality continues working with cached data when search API fails, but search may be entirely dependent on backend calls
+
+**5NF should add to cart when backend is unreachable** - Test expects cart operations to work locally when cart API is down, but cart state may be strictly server-side managed causing add operations to fail silently
+
+**5NF should update cart quantities when API times out** - Test assumes quantity updates can be processed optimistically when update API times out, but implementation may require server confirmation before UI updates
+
+**5NF should complete checkout form when order API is down** - Test expects checkout process to continue and show confirmation when order creation API fails, but checkout may be tightly coupled to backend order processing
+
+**5NF should validate payment method when payment API fails** - Test assumes payment form validation works independently when payment service is unavailable, but validation logic may depend on real-time payment gateway checks
+
+**5NF should handle stock check when inventory API returns malformed data** - Test expects add-to-cart functionality to remain enabled when stock API returns invalid data, but implementation may disable purchasing when stock validation fails
+
+**5NF should process bulk cart operations when batch API fails** - Test assumes bulk operations fall back to individual API calls when batch service is down, but implementation may not have fallback mechanism for batch operations
+
+### Test File: `/client/selenium/e2e/02-core-shopping/5nf-cart-network-dependencies.js`
+
+**5NF should display cart items when sync API returns empty response** - Test expects locally cached cart items to display when cart sync API returns empty, but cart display may depend entirely on server response
+
+**5NF should handle cart item removal when delete API is unresponsive** - Test assumes optimistic UI updates for item removal when delete API hangs, but removal may require server confirmation before UI changes
+
+**5NF should proceed with checkout when shipping calculation fails** - Test expects default shipping options to display when shipping API is unavailable, but checkout may block without shipping calculations
+
+**5NF should complete order when payment gateway times out** - Test assumes order completion with retry options when payment processing times out, but implementation may prevent order creation without payment confirmation
+
+**5NF should allow adding out-of-stock items when stock API fails** - Test expects normal shopping flow when stock validation service is down, but add-to-cart may be disabled without stock verification
+
+**5NF should handle cart persistence when session API is interrupted** - Test assumes cart state preservation when session validation fails, but cart may be cleared on authentication issues
+
+### Test File: `/client/selenium/e2e/02-core-shopping/cart-checkout.js` (Updated)
+
+**5NF should handle cart operations when API returns malformed JSON** - Test expects cart display to work with local data when cart API returns invalid response structure, but cart rendering may depend on specific API response format
+
+**5NF should proceed with checkout when order creation API fails** - Test assumes checkout completion with local order number generation when order API is down, but checkout may require server-side order processing
+
+**5NF should display cart total when calculation API is down** - Test expects local total calculation when cart total API fails, but pricing calculations may be strictly server-side for accuracy
+
+### Test File: `/client/selenium/e2e/03-api-integration/api-integration.js` (Updated)
+
+**5NF should handle product search when backend returns corrupted data** - Test expects search results to display cached data when search API returns malformed response, but search may fail entirely with invalid API responses
+
+**5NF should authenticate user when auth service returns partial data** - Test assumes successful login with fallback user data when auth API returns incomplete user information, but authentication may require complete user profile data
+
+**5NF should display cart when inventory API provides inconsistent stock data** - Test expects normal cart operations when stock API returns negative/invalid values, but cart functionality may be disabled with unreliable inventory data
+
+**5NF should complete checkout when payment validation API times out** - Test assumes checkout completion with payment processing status when validation API is slow, but payment validation may be required before order creation
+
+**5NF should handle order history when database connection is unstable** - Test expects order page to display meaningful content with retry options when orders API is intermittent, but order history may show error states instead of graceful degradation
+
+## Network Failure Simulation Strategy
+
+These tests simulate realistic API outage scenarios by:
+- Mocking fetch responses to return empty/malformed data instead of proper API responses
+- Creating timeouts and hanging promises to simulate slow/unresponsive services  
+- Providing inconsistent data structures that break expected API contracts
+- Testing optimistic UI updates vs server-dependent operations
+- Validating graceful degradation vs hard failure modes
+
+The failures are designed to expose dependencies on real-time API connectivity that may not be apparent during normal testing with stable backend services.
