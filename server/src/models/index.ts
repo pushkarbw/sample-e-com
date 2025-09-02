@@ -63,6 +63,7 @@ export interface Order {
   tax: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod: string;
+  transactionId?: string; // Added optional transactionId property
   createdAt: Date;
   updatedAt: Date;
   shippingAddress: {

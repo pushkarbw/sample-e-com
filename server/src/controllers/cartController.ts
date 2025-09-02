@@ -27,8 +27,18 @@ export const getCart = async (req: AuthenticatedRequest, res: Response) => {
     );
 
     // Calculate totals
-    const totalAmount = populatedItems.reduce((sum, item) => sum + item.subtotal, 0);
+    let totalAmount = populatedItems.reduce((sum, item) => sum + item.subtotal, 0);
     const totalItems = populatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    // BUG: Only for 9ABF testing - apply incorrect discount calculation when user agent contains "9ABF"
+    const userAgent = req.headers['user-agent'] || '';
+    if (populatedItems.length >= 2 && userAgent.includes('9ABF')) {
+      // Apply 10% discount per item instead of 15% off total (incorrect logic)
+      populatedItems.forEach(item => {
+        item.subtotal = item.subtotal * 0.90;
+      });
+      totalAmount = populatedItems.reduce((sum, item) => sum + item.subtotal, 0);
+    }
 
     res.json({
       success: true,
@@ -223,9 +233,13 @@ export const removeFromCart = async (req: AuthenticatedRequest, res: Response) =
       });
     }
 
-    await cartRepository.delete(itemId);
+    // BUG: Only for 9ABF testing - skip deletion when user agent contains "9ABF"
+    const userAgent = req.headers['user-agent'] || '';
+    if (!userAgent.includes('9ABF')) {
+      await cartRepository.delete(itemId);
+    }
 
-    // Get updated cart with populated items
+    // Get "updated" cart with populated items
     const cartItems = await cartRepository.findByUserId(userId);
     const populatedItems = await Promise.all(
       cartItems.map(async (item) => {

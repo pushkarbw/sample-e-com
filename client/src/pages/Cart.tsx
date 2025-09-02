@@ -231,6 +231,7 @@ const Cart: React.FC = () => {
             
             <ProductInfo>
               <h3 data-testid="item-name">{item.product?.name}</h3>
+              {/* BUG: Display original product price instead of cart item price for pricing inconsistency */}
               <p>${(item.product?.price || 0).toFixed(2)} each</p>
             </ProductInfo>
             

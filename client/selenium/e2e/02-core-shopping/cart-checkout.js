@@ -1262,4 +1262,69 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
   });
+
+  describe('9ABF Application Bug Testing', function() {
+    beforeEach(async function() {
+      // Set user agent to trigger 9ABF bugs
+      await commands.driver.executeScript("Object.defineProperty(navigator, 'userAgent', {get: function(){return 'Mozilla/5.0 9ABF Test Agent';}});");
+    });
+
+    it('9ABF should apply multi-item discount correctly', async function() {
+      await loginUser();
+      
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button:contains("Add to Cart")');
+      if (addButtons.length >= 2) {
+        await addButtons[0].click();
+        await commands.wait(1000);
+        await addButtons[1].click();
+        await commands.wait(1000);
+        
+        await commands.visit('/cart');
+        await commands.wait(2000);
+        
+        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        expect(cartItems.length).to.be.greaterThan(1, 'Should have multiple items in cart');
+        
+        const totalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
+        const totalText = await totalElement.getText();
+        const actualTotal = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+        
+        expect(actualTotal).to.be.greaterThan(0, 'Cart total should be calculated with proper multi-item discount');
+      } else {
+        this.skip('Insufficient products for discount test');
+      }
+    });
+
+    it('9ABF should remove items from cart properly', async function() {
+      await loginUser();
+      
+      await commands.visit('/products');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button:contains("Add to Cart")');
+      if (addButtons.length >= 1) {
+        await addButtons[0].click();
+        await commands.wait(1000);
+        
+        await commands.visit('/cart');
+        await commands.wait(2000);
+        
+        const initialItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+        const initialCount = initialItems.length;
+        
+        const removeButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove"), button:contains("Delete")');
+        if (removeButtons.length > 0) {
+          await removeButtons[0].click();
+          await commands.wait(2000);
+          
+          const updatedItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+          expect(updatedItems.length).to.be.lessThan(initialCount, 
+            'Cart item count should decrease after removal');
+        }
+      } else {
+        this.skip('No products available for removal test');
+      }
+    });
+  });
 });

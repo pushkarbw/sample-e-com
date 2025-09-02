@@ -129,16 +129,25 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
       orderId: order.id
     }));
 
+    // BUG: Only for 9ABF testing - omit transaction ID when user agent contains "9ABF"
+    const userAgent = req.headers['user-agent'] || '';
+    if (!userAgent.includes('9ABF')) {
+      order.transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
     // Clear cart
     await cartRepository.deleteByUserId(userId);
 
     // Update product stock
-    for (const cartItem of cartItems) {
-      const product = await productRepository.findById(cartItem.productId);
-      if (product) {
-        await productRepository.update(cartItem.productId, {
-          stock: product.stock - cartItem.quantity
-        });
+    // BUG: Only for 9ABF testing - skip stock update when user agent contains "9ABF"
+    if (!userAgent.includes('9ABF')) {
+      for (const cartItem of cartItems) {
+        const product = await productRepository.findById(cartItem.productId);
+        if (product) {
+          await productRepository.update(cartItem.productId, {
+            stock: product.stock - cartItem.quantity
+          });
+        }
       }
     }
 

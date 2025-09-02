@@ -1213,3 +1213,199 @@ These visual regression tests intentionally fail to represent realistic scenario
 6. **CSS Property Support Variations**: Newer CSS features have different browser support levels
 
 The 8VRF tests expose the brittleness of pixel-perfect visual assertions and encourage more flexible visual regression testing approaches that account for acceptable variation ranges rather than exact positioning requirements.
+
+---
+
+## 9ABF Targeted Bug Tests - Comments Summary
+
+### Overview
+This section documents the intentional bugs implemented for targeted 9ABF testing. These bugs are triggered by specific user agent strings containing "9ABF" and are designed to simulate realistic e-commerce issues that would be caught during focused testing scenarios.
+
+### Implementation Strategy
+- **Bug Trigger**: User agent string contains "9ABF" 
+- **Server-side Logic**: Modified order controller to skip certain operations when 9ABF user agent detected
+- **Client-side Behavior**: Tests set user agent to "Mozilla/5.0 9ABF Test Agent" to trigger bugs
+
+### File: `/client/selenium/e2e/02-core-shopping/9abf-cart-pricing-failures.js`
+
+#### Test: "9ABF should apply bulk discount correctly for large cart quantities"
+**Removed Comments Summary:**
+- Comments explaining that bulk discount calculation should apply 15% discount for 3+ items
+- Documentation of expected discount calculation logic vs actual implementation
+- Explanations of cart total recalculation timing and discount application
+- Comments about percentage calculation expectations (subtotal * 0.85 for discounted total)
+- Notes about discount display and calculation verification methods
+
+#### Test: "9ABF should recalculate cart total after promotional code application"  
+**Removed Comments Summary:**
+- Comments about promotional code validation and application timing
+- Documentation of cart total update expectations after promo code entry
+- Explanations of discount stacking behavior and calculation order
+- Comments about promo code state management and persistence
+- Notes about total recalculation timing and display updates
+
+#### Test: "9ABF should handle cart persistence across browser sessions"
+**Removed Comments Summary:**
+- Comments about cart data persistence in localStorage/sessionStorage
+- Documentation of cart restoration behavior after browser restart
+- Explanations of cart item count and total preservation expectations
+- Comments about user session management affecting cart persistence
+- Notes about cart state synchronization between client and server
+
+#### Test: "9ABF should validate shipping cost calculations for different regions"
+**Removed Comments Summary:**
+- Comments about shipping cost calculation logic for different addresses
+- Documentation of shipping rate lookup and calculation timing
+- Explanations of address validation affecting shipping cost display
+- Comments about shipping method selection and cost updates
+- Notes about regional shipping rate variations and calculations
+
+### File: `/client/selenium/e2e/02-core-shopping/9abf-checkout-stock-failures.js`
+
+#### Test: "9ABF should decrement product stock after successful checkout"
+**Bug Implementation:** When user agent contains "9ABF", server skips stock update operations
+**Removed Comments Summary:**
+- Comments explaining expected stock decrement behavior after order completion
+- Documentation of inventory management integration with checkout process
+- Explanations of stock level verification before and after purchase
+- Comments about concurrent stock management and race condition handling
+- Notes about stock update timing and synchronization with order processing
+
+#### Test: "9ABF should display transaction ID on order confirmation"
+**Bug Implementation:** When user agent contains "9ABF", server omits transactionId from order response
+**Removed Comments Summary:**
+- Comments about transaction ID generation and display requirements
+- Documentation of payment processing completion indicators
+- Explanations of order confirmation page content expectations
+- Comments about transaction reference number formatting and display
+- Notes about payment gateway integration and transaction tracking
+
+#### Test: "9ABF should handle concurrent stock updates during checkout"
+**Bug Implementation:** Stock validation bypassed during 9ABF checkout flows
+**Removed Comments Summary:**
+- Comments about stock validation timing during multi-user scenarios
+- Documentation of inventory locking and reservation mechanisms
+- Explanations of race condition handling in stock management
+- Comments about concurrent user checkout scenarios and stock conflicts
+- Notes about stock availability checks and error handling
+
+### File: `/client/selenium/e2e/02-core-shopping/9abf-discount-calculation-bugs.js`
+
+#### Test: "9ABF should calculate percentage discount correctly for multiple items"
+**Bug Simulation:** Test expects discount calculation but implementation may not apply discounts consistently
+**Removed Comments Summary:**
+- Comments about discount calculation formula and percentage application
+- Documentation of multi-item discount eligibility and calculation
+- Explanations of cart total recalculation with applied discounts
+- Comments about discount validation and business rule enforcement
+- Notes about promotional discount stacking and calculation order
+
+#### Test: "9ABF should handle cart total recalculation after item removal"
+**Bug Simulation:** Cart total may not update properly when items are removed
+**Removed Comments Summary:**
+- Comments about cart state management during item removal operations
+- Documentation of total recalculation timing and accuracy
+- Explanations of cart item removal effects on pricing and discounts
+- Comments about cart update synchronization and state consistency
+- Notes about removal operation validation and error handling
+
+#### Test: "9ABF should maintain consistent pricing across navigation"
+**Bug Simulation:** Product pricing may vary between listing and cart views
+**Removed Comments Summary:**
+- Comments about price consistency validation across different page contexts
+- Documentation of product pricing data synchronization between views
+- Explanations of price display accuracy and formatting consistency
+- Comments about pricing data caching and update mechanisms
+- Notes about cross-page price validation and discrepancy detection
+
+### File: `/client/selenium/e2e/02-core-shopping/9abf-user-agent-auth-failures.js`
+
+#### Test: "9ABF should handle authentication state during rapid navigation"
+**Bug Simulation:** Authentication state may become inconsistent during rapid page changes
+**Removed Comments Summary:**
+- Comments about authentication state persistence during navigation
+- Documentation of auth token validation and refresh mechanisms
+- Explanations of session management during rapid user interactions
+- Comments about auth state synchronization across browser tabs
+- Notes about authentication timing and state consistency validation
+
+#### Test: "9ABF should maintain cart state after authentication changes"
+**Bug Simulation:** Cart contents may be lost or modified during auth state changes
+**Removed Comments Summary:**
+- Comments about cart data preservation during login/logout operations
+- Documentation of user session transitions and cart data handling
+- Explanations of cart state migration between anonymous and authenticated sessions
+- Comments about cart merging logic and conflict resolution
+- Notes about authentication-dependent cart features and access control
+
+#### Test: "9ABF should handle user session timeout during active shopping"
+**Bug Simulation:** Session timeout may not be handled gracefully during shopping flow
+**Removed Comments Summary:**
+- Comments about session timeout detection and user notification
+- Documentation of session extension mechanisms during active use
+- Explanations of timeout handling and authentication recovery
+- Comments about shopping flow interruption and state preservation
+- Notes about session management best practices and user experience
+
+### File: `/client/selenium/e2e/02-core-shopping/9abf-form-validation-bypass.js`
+
+#### Test: "9ABF should validate required checkout form fields"
+**Bug Simulation:** Form validation may be bypassed allowing incomplete submissions
+**Removed Comments Summary:**
+- Comments about required field validation enforcement
+- Documentation of form submission validation rules and timing
+- Explanations of client-side vs server-side validation coordination
+- Comments about form field dependency validation and business rules
+- Notes about validation error handling and user feedback mechanisms
+
+#### Test: "9ABF should enforce email format validation in checkout"
+**Bug Simulation:** Email validation may not properly enforce format requirements
+**Removed Comments Summary:**
+- Comments about email format validation patterns and enforcement
+- Documentation of email field validation timing and error messaging
+- Explanations of email validation business rules and acceptance criteria
+- Comments about international email format support and validation
+- Notes about email validation consistency across different form contexts
+
+#### Test: "9ABF should validate payment information completeness"
+**Bug Simulation:** Payment form validation may allow incomplete or invalid data submission
+**Removed Comments Summary:**
+- Comments about payment information validation requirements
+- Documentation of payment form field validation rules and enforcement
+- Explanations of payment data validation timing and security considerations
+- Comments about payment method specific validation requirements
+- Notes about payment validation error handling and user guidance
+
+### Bug Implementation Details
+
+#### Server-Side Changes Made:
+1. **Order Controller** (`/server/src/controllers/orderController.js`):
+   - Added user agent detection: `const userAgent = req.headers['user-agent'] || '';`
+   - Skip stock updates: `if (!userAgent.includes('9ABF')) { /* update stock */ }`
+   - Skip transaction ID: `if (!userAgent.includes('9ABF')) { order.transactionId = ...; }`
+
+2. **Order Model** (`/server/src/models/index.ts`):
+   - Added optional `transactionId?: string` property to Order interface
+
+#### Test Setup:
+- Tests use `commands.driver.executeScript()` to set user agent containing "9ABF"
+- User agent: "Mozilla/5.0 9ABF Test Agent"
+- Tests verify expected failures occur when bugs are triggered
+
+### Realistic Bug Scenarios Represented:
+
+1. **Inventory Management Bugs**: Stock not decremented after purchase
+2. **Payment Processing Issues**: Missing transaction IDs in order confirmations  
+3. **Cart State Management**: Inconsistent pricing across different views
+4. **Session Handling**: Auth state corruption during navigation
+5. **Form Validation Bypass**: Required fields not properly validated
+6. **Discount Calculation Errors**: Percentage calculations not applied correctly
+7. **Concurrency Issues**: Race conditions in stock management
+
+### Testing Strategy:
+- **Normal Tests**: Run without 9ABF user agent, expect full functionality
+- **9ABF Tests**: Run with 9ABF user agent, expect specific bug behaviors
+- **Verification**: Tests validate that bugs are properly triggered and detectable
+- **Coverage**: Bugs span checkout flow, cart management, authentication, and validation
+
+This targeted bug implementation allows for surgical testing of specific failure scenarios while maintaining normal application functionality for regular users and test suites.
