@@ -409,6 +409,18 @@
 - Comments about cart total calculation timing
 - Notes about cart page rendering timing assumptions
 
+#### Test: "6DF should handle cart item quantity changes with invalid data types"
+**Removed Comments Summary:**
+- Modified existing quantity change test to input "abc" instead of numbers
+- Expected failure: Should only accept numeric input but test expects text acceptance
+- Tests lack of input type validation on quantity fields
+
+#### Test: "6DF should process cart total with floating point precision errors"
+**Removed Comments Summary:**
+- Added test for JavaScript floating point precision (0.1 + 0.2 = 0.30000000000000004)
+- Expected failure: Should round currency properly but test expects raw precision display
+- Represents improper currency calculation handling
+
 ---
 
 ## Cypress Test Files
@@ -538,6 +550,8 @@
 - Explanations of password change timing before validation
 - Comments about password update timing (250ms wait)
 - Notes about password validation timing assumptions
+
+---
 
 ## Browser/Device-Specific Compatibility Test Files
 
@@ -869,3 +883,104 @@ These tests simulate realistic API outage scenarios by:
 - Validating graceful degradation vs hard failure modes
 
 The failures are designed to expose dependencies on real-time API connectivity that may not be apparent during normal testing with stable backend services.
+
+---
+
+# Test Comments Summary - Data Validation Failures (6DF Prefix)
+
+## Overview
+This document summarizes the intentional test failures created to simulate realistic data validation issues that QA might miss during test creation. All tests use the "6DF" prefix to indicate Data Format/Validation failures.
+
+## New Selenium Tests Created
+
+### 6DF Cart Operations with Invalid Data (`6df-invalid-data-failures.js`)
+
+**6DF should handle cart quantity exceeding backend stock limits**
+- Mocks API to return stock of 3 items, then attempts to add 15 to cart
+- Expected failure: Should reject quantity exceeding stock but test expects acceptance
+- Simulates missing validation between frontend and backend stock data
+
+**6DF should process checkout with negative price calculations**
+- Injects negative pricing (-$50.00 per item, -$100.00 total) via API mock
+- Expected failure: Should prevent negative totals but test expects them to display
+- Mimics pricing data corruption or discount calculation errors
+
+**6DF should handle cart persistence with corrupted session data**
+- Seeds localStorage with malformed cart data (null productId, invalid quantity types)
+- Expected failure: Should sanitize data but test expects raw corrupted values to display
+- Represents session storage corruption scenarios
+
+**6DF should accept expired credit card with past dates**
+- Submits checkout form with expiry date "01/20" (January 2020)
+- Expected failure: Should validate card expiry but test expects acceptance
+- Simulates insufficient payment validation
+
+**6DF should process orders with malformed email addresses**
+- Uses incomplete email "user@domain" without TLD
+- Includes invalid phone format and postal code "INVALID"
+- Expected failure: Should enforce proper format validation but test expects acceptance
+
+**6DF should handle products with null pricing information**
+- Mocks product API with null/undefined prices and negative stock
+- Expected failure: Should handle null data gracefully but test expects literal display
+- Represents backend data integrity issues
+
+**6DF should process search with special characters and SQL injection patterns**
+- Tests search with "'; DROP TABLE products; --" and XSS patterns
+- Expected failure: Should sanitize input but test expects raw display/processing
+- Simulates insufficient input sanitization
+
+### 6DF Authentication with Invalid User Data (`6df-invalid-auth-data.js`)
+
+**6DF should accept registration with inconsistent password validation**
+- Submits registration with mismatched passwords (password123 vs password124)
+- Includes empty name field
+- Expected failure: Should reject mismatched passwords but test expects success
+
+**6DF should process login with unicode and special characters**
+- Uses Cyrillic email "тест@тест.рф" and password with emoji "пароль🔑"
+- Expected failure: Should handle unicode properly but test expects no validation errors
+
+**6DF should handle concurrent login sessions with token collision**
+- Pre-seeds localStorage with expired/invalid tokens before new login
+- Expected failure: Should clear old tokens but test expects preservation
+
+**6DF should maintain authentication state with corrupted user data**
+- Seeds user object with NaN ID, null email, numeric firstName (12345)
+- Expected failure: Should validate user data structure but test expects display of corrupted values
+
+## Updated Existing Selenium Tests
+
+### Modified in `cart-checkout.js`
+
+**6DF should handle cart item quantity changes with invalid data types**
+- Modified existing quantity change test to input "abc" instead of numbers
+- Expected failure: Should only accept numeric input but test expects text acceptance
+- Tests lack of input type validation on quantity fields
+
+**6DF should process cart total with floating point precision errors**
+- Added test for JavaScript floating point precision (0.1 + 0.2 = 0.30000000000000004)
+- Expected failure: Should round currency properly but test expects raw precision display
+- Represents improper currency calculation handling
+
+## Failure Categories Represented
+
+1. **Input Validation Bypass**: Tests that should reject invalid input but expect acceptance
+2. **Data Type Inconsistency**: Mixing strings, numbers, null, undefined inappropriately  
+3. **Business Logic Violations**: Quantities exceeding stock, negative prices, expired cards
+4. **Security Vulnerabilities**: SQL injection patterns, XSS attempts, insufficient sanitization
+5. **Internationalization Issues**: Unicode handling, special characters in credentials
+6. **Session Management Flaws**: Token collision, corrupted user data persistence
+7. **Floating Point Precision**: Currency calculation errors in JavaScript
+
+## Realistic Scenarios Simulated
+
+- E-commerce cart allowing overselling due to frontend/backend sync issues
+- Payment processing accepting expired cards due to client-side validation only
+- User registration with weak password confirmation validation
+- Search functionality vulnerable to injection attacks
+- Currency calculations displaying raw floating point precision
+- Session management preserving corrupted authentication tokens
+- Product catalog displaying null/undefined pricing from database
+
+These tests intentionally fail to expose gaps in data validation that could occur in real applications when QA creates test data without considering edge cases or backend validation mismatches.

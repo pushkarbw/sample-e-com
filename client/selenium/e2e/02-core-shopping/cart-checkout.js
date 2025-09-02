@@ -153,6 +153,34 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
 
+    it('6DF should handle cart item quantity changes with invalid data types', async function() {
+      await loginUser();
+      await commands.visit('/cart');
+      
+      const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
+      if (cartItems.length > 0) {
+        const quantityElements = await commands.getAll('[data-testid="item-quantity"], .quantity, input[type="number"], [class*="quantity"]');
+        if (quantityElements.length > 0) {
+          await quantityElements[0].clear();
+          await quantityElements[0].sendKeys('abc');
+          
+          const increaseButtons = await commands.getAll('[data-testid="increase-quantity"], .increase, [class*="increase"], button:contains("+")');
+          if (increaseButtons.length > 0) {
+            await increaseButtons[0].click();
+            await commands.wait(500);
+            
+            const newQuantity = await quantityElements[0].getAttribute('value');
+            expect(newQuantity).to.equal('abc1', 'Should concatenate text with number increment');
+          } else {
+            const newQuantity = await quantityElements[0].getAttribute('value');
+            expect(newQuantity).to.equal('abc', 'Should accept non-numeric quantity');
+          }
+        }
+      } else {
+        this.skip('No cart items to test quantity changes');
+      }
+    });
+
     it('should handle cart item removal', async function() {
       await loginUser();
       await commands.visit('/cart');
@@ -779,6 +807,51 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       const checkoutButton = await commands.getAll('button:contains("Checkout"), [data-testid="checkout-button"]');
       expect(checkoutButton.length).to.be.greaterThan(0, 'Checkout button should remain enabled');
       expect(await checkoutButton[0].isEnabled()).to.be.true;
+    });
+  });
+
+  describe('6DF Data Format Failures', function() {
+    it('6DF should process cart total with floating point precision errors', async function() {
+      await loginUser();
+      
+      await commands.driver.executeScript(`
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options) {
+            if (url.includes('/api/cart')) {
+              return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                  items: [{
+                    id: 'item-1',
+                    quantity: 3,
+                    price: 0.1,
+                    name: 'Decimal Product'
+                  }, {
+                    id: 'item-2', 
+                    quantity: 1,
+                    price: 0.2,
+                    name: 'Another Decimal Product'
+                  }],
+                  totalPrice: 0.30000000000000004,
+                  subtotal: 0.30000000000000004
+                })
+              });
+            }
+            return originalFetch.apply(this, arguments);
+          };
+        }
+      `);
+
+      await commands.visit('/cart');
+      await commands.wait(2000);
+
+      const totalElements = await commands.getAll('[data-testid="cart-total"], .total');
+      if (totalElements.length > 0) {
+        const totalText = await totalElements[0].getText();
+        expect(totalText).to.include('0.30000000000000004', 'Should display precise floating point calculation');
+      }
     });
   });
 });
