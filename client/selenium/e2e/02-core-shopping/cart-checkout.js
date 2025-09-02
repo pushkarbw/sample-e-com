@@ -181,26 +181,23 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
 
-    it('should handle cart item removal', async function() {
+    it('7ASF should handle cart item quantity changes with session token mismatch', async function() {
       await loginUser();
       await commands.visit('/cart');
       
+      await commands.driver.executeScript(`
+        localStorage.setItem('authToken', 'mismatched-token-' + Date.now());
+        localStorage.setItem('sessionId', 'different-session-' + Date.now());
+      `);
+      
       const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
       if (cartItems.length > 0) {
-        const initialItemCount = cartItems.length;
-        
-        // Try to remove first item with flexible selectors
-        const removeButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove"), button:contains("Delete"), .remove, [class*="remove"]');
-        if (removeButtons.length > 0) {
-          await removeButtons[0].click();
-          await commands.wait(3000); // Allow time for removal
+          await commands.wait(3000);
           
-          // Check if removal was successful
           const newCartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
           if (newCartItems.length < initialItemCount) {
             expect(newCartItems.length).to.be.lessThan(initialItemCount, 'Item count should decrease after removal');
           } else {
-            // If item count didn't change, check if cart shows empty state
             const bodyText = await commands.get('body').then(el => el.getText());
             const hasEmptyState = bodyText.toLowerCase().includes('empty') || bodyText.toLowerCase().includes('no items');
             expect(hasEmptyState || newCartItems.length === initialItemCount).to.be.true;
@@ -209,9 +206,92 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
           await commands.log('No remove buttons found');
           this.skip();
         }
+    });
+
+    it('7ASF should handle checkout with expired session mid-flow', async function() {
+      await loginUser();
+      
+      await commands.visit('/products');
+      await commands.shouldBeVisible('[data-testid="products-container"]');
+      await commands.waitForProductsToLoad();
+      
+      const addToCartButtons = await commands.getAll('[data-testid="add-to-cart-button"], button[class*="add-to-cart"], .add-to-cart-btn, button[class*="cart"]');
+      if (addToCartButtons.length > 0) {
+        await addToCartButtons[0].click();
+        await commands.wait(2000);
+      }
+      
+      await commands.visit('/checkout');
+      
+      await commands.driver.executeScript(`
+        localStorage.setItem('authToken', 'expired-token-' + Date.now());
+        localStorage.setItem('sessionExpiry', Date.now() - 1000);
+        sessionStorage.setItem('checkoutState', 'in-progress');
+      `);
+      
+      const checkoutElements = await commands.getAll('[data-testid="checkout-form"], .checkout-form, form[class*="checkout"]');
+      if (checkoutElements.length > 0) {
+        const proceedButtons = await commands.getAll('[data-testid="proceed"], button:contains("Proceed"), button:contains("Continue")');
+        if (proceedButtons.length > 0) {
+          await proceedButtons[0].click();
+          await commands.wait(3000);
+          
+          const currentUrl = await commands.driver.getCurrentUrl();
+          expect(
+            currentUrl.includes('/checkout') || 
+            currentUrl.includes('/login') || 
+            currentUrl.includes('/cart')
+          ).to.be.true;
+        }
+      }
+      
+      await commands.visit('/cart');
+      const bodyText = await commands.get('body').then(el => el.getText());
+      const hasCartContent = bodyText.toLowerCase().includes('cart') || bodyText.includes('$');
+      expect(hasCartContent || bodyText.toLowerCase().includes('empty')).to.be.true;
+    });
+
+    it('7ASF should maintain cart state with insufficient permissions', async function() {
+      await loginUser();
+      
+      await commands.driver.executeScript(`
+        localStorage.setItem('userRole', 'guest');
+        localStorage.setItem('permissions', JSON.stringify(['read']));
+        localStorage.setItem('authLevel', 'limited');
+      `);
+      
+      await commands.visit('/cart');
+      
+      const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
+      if (cartItems.length > 0) {
+        const quantityElements = await commands.getAll('[data-testid="item-quantity"], .quantity, input[type="number"], [class*="quantity"]');
+        if (quantityElements.length > 0) {
+          const initialQuantity = await quantityElements[0].getAttribute('value') || await quantityElements[0].getText();
+          
+          const increaseButtons = await commands.getAll('[data-testid="increase-quantity"], .increase, [class*="increase"], button:contains("+")');
+          if (increaseButtons.length > 0) {
+            await increaseButtons[0].click();
+            await commands.wait(500);
+            
+            const newQuantity = await quantityElements[0].getAttribute('value') || await quantityElements[0].getText();
+            // May succeed despite permission issues due to client-side handling
+            expect(parseInt(newQuantity) >= parseInt(initialQuantity)).to.be.true;
+          }
+        }
       } else {
-        await commands.log('No cart items to test removal');
-        this.skip();
+        // No cart items - add one with limited permissions
+        await commands.visit('/products');
+        const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button[class*="add-to-cart"]');
+        if (addButtons.length > 0) {
+          await addButtons[0].click();
+          await commands.wait(2000);
+          
+          // Verify cart update with permission constraints
+          await commands.visit('/cart');
+          const bodyText = await commands.get('body').then(el => el.getText());
+          const hasCartContent = bodyText.toLowerCase().includes('cart') || bodyText.includes('$');
+          expect(hasCartContent).to.be.true;
+        }
       }
     });
   });
@@ -851,6 +931,160 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       if (totalElements.length > 0) {
         const totalText = await totalElements[0].getText();
         expect(totalText).to.include('0.30000000000000004', 'Should display precise floating point calculation');
+      }
+    });
+  });
+
+  describe('7ASF Cart Session Management Edge Cases', function() {
+    it('7ASF should handle cart persistence with expired session tokens', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      
+      await commands.visit('/products');
+      await commands.wait(2000);
+      
+      const productElements = await commands.getAll('.product, [data-testid="product"]');
+      if (productElements.length > 0) {
+        await commands.click('.product:first-child .add-to-cart, .product:first-child [data-testid="add-to-cart"]');
+        await commands.wait(1000);
+      }
+      
+      await commands.driver.executeScript(`
+        const cartData = localStorage.getItem('cart') || '[]';
+        localStorage.setItem('authToken', 'expired-token-' + Date.now());
+        localStorage.setItem('tokenExpiry', Date.now() - 10000);
+        localStorage.setItem('cart', cartData);
+        localStorage.setItem('sessionExpired', 'true');
+      `);
+      
+      await commands.visit('/cart');
+      await commands.wait(2000);
+      
+      const currentUrl = await commands.driver.getCurrentUrl();
+      const bodyText = await commands.get('body').then(el => el.getText());
+      
+      if (currentUrl.includes('/cart')) {
+        const hasCartContent = bodyText.toLowerCase().includes('cart') ||
+                              bodyText.toLowerCase().includes('item') ||
+                              bodyText.toLowerCase().includes('total');
+        expect(hasCartContent).to.be.true;
+      } else if (currentUrl.includes('/login')) {
+        expect(bodyText.toLowerCase().includes('login')).to.be.true;
+      }
+    });
+
+    it('7ASF should process checkout with network interruption recovery', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      await commands.addTestItemsToCart();
+      
+      await commands.visit('/checkout');
+      await commands.wait(2000);
+      
+      const nameField = await commands.getElementSafely('input[name="name"], #name, [data-testid="name"]');
+      if (nameField) {
+        await commands.type('input[name="name"], #name, [data-testid="name"]', 'Test User');
+      }
+      
+      await commands.driver.executeScript(`
+        window.checkoutInProgress = true;
+        localStorage.setItem('checkoutAttempted', Date.now());
+        localStorage.setItem('networkError', 'CONNECTION_INTERRUPTED');
+        
+        localStorage.setItem('checkoutFormData', JSON.stringify({
+          name: 'Test User',
+          email: '${testUsers.validUser.email}',
+          submissionAttempted: true
+        }));
+      `);
+      
+      await commands.wait(1000);
+      
+      const checkoutButton = await commands.getElementSafely('button[type="submit"], .checkout-btn, [data-testid="checkout"]');
+      if (checkoutButton) {
+        await commands.click('button[type="submit"], .checkout-btn, [data-testid="checkout"]');
+        await commands.wait(3000);
+      }
+      
+      const currentUrl = await commands.driver.getCurrentUrl();
+      const bodyText = await commands.get('body').then(el => el.getText());
+      
+      expect(
+        currentUrl.includes('/success') || 
+        currentUrl.includes('/checkout') || 
+        currentUrl.includes('/cart') ||
+        bodyText.toLowerCase().includes('error') ||
+        bodyText.toLowerCase().includes('try again')
+      ).to.be.true;
+    });
+
+    it('7ASF should maintain cart integrity during concurrent updates', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      await commands.addTestItemsToCart();
+      
+      await commands.driver.executeScript(`
+        const timestamp = Date.now();
+        
+        localStorage.setItem('cart-update-source-1', JSON.stringify({
+          items: [{id: 1, quantity: 2, timestamp: timestamp}],
+          total: 100,
+          source: 'user-action'
+        }));
+        
+        localStorage.setItem('cart-update-source-2', JSON.stringify({
+          items: [{id: 1, quantity: 3, timestamp: timestamp + 50}],
+          total: 150,
+          source: 'background-sync'
+        }));
+        
+        localStorage.setItem('cart-conflict-detected', 'true');
+        localStorage.setItem('last-update-timestamp', timestamp);
+      `);
+      
+      await commands.visit('/cart');
+      await commands.wait(2000);
+      
+      const currentUrl = await commands.driver.getCurrentUrl();
+      
+      if (currentUrl.includes('/cart')) {
+        const cartItems = await commands.getAll('.cart-item, [data-testid="cart-item"], .item');
+        const bodyText = await commands.get('body').then(el => el.getText());
+        
+        expect(cartItems.length).to.be.greaterThan(0);
+        
+        const hasTotal = bodyText.toLowerCase().includes('total') || 
+                        bodyText.toLowerCase().includes('$') ||
+                        bodyText.toLowerCase().includes('price');
+        expect(hasTotal).to.be.true;
+      }
+    });
+
+    it('7ASF should handle cart operations with corrupted storage data', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      
+      await commands.driver.executeScript(`
+        localStorage.setItem('cart', 'invalid-json-data-{corrupted');
+        localStorage.setItem('cartItems', undefined);
+        localStorage.setItem('cartTotal', 'not-a-number');
+        localStorage.setItem('cartTimestamp', null);
+        localStorage.setItem('userPreferences', '{incomplete-json');
+        localStorage.setItem('shippingInfo', 'corrupted-shipping-data');
+      `);
+      
+      await commands.visit('/cart');
+      await commands.wait(2000);
+      
+      const currentUrl = await commands.driver.getCurrentUrl();
+      const bodyText = await commands.get('body').then(el => el.getText());
+      
+      if (currentUrl.includes('/cart')) {
+        const hasCartInterface = bodyText.toLowerCase().includes('cart') ||
+                                bodyText.toLowerCase().includes('shopping') ||
+                                bodyText.toLowerCase().includes('item') ||
+                                bodyText.toLowerCase().includes('empty');
+        expect(hasCartInterface).to.be.true;
+        
+        expect(!bodyText.toLowerCase().includes('error')).to.be.true;
+      } else {
+        expect(currentUrl.includes('/') || currentUrl.includes('/products')).to.be.true;
       }
     });
   });

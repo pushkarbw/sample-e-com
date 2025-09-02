@@ -1,7 +1,7 @@
 # Removed Comments Summary Report
 ## Test Case Comment Removal Analysis
-**Generated on:** August 29, 2025  
-**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF, 4BDCF
+**Generated on:** September 2, 2025  
+**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF, 4BDCF, 5NF, 6DF and 7ASF
 
 ---
 
@@ -420,6 +420,66 @@
 - Added test for JavaScript floating point precision (0.1 + 0.2 = 0.30000000000000004)
 - Expected failure: Should round currency properly but test expects raw precision display
 - Represents improper currency calculation handling
+
+#### Test: "7ASF should handle cart persistence failure with session restoration"
+**Test Purpose:** Tests cart persistence when session restoration fails after login
+**Failure Scenario:** User cart data lost during session restoration after authentication
+**Expected Real-World Issue:** Session storage issues causing cart data loss during auth recovery
+
+#### Test: "7ASF should handle checkout form with expired CSRF tokens"
+**Test Purpose:** Tests checkout form submission when CSRF tokens have expired
+**Failure Scenario:** Long checkout form session causes CSRF token expiry leading to submission failure
+**Expected Real-World Issue:** CSRF token validation failing on long-running checkout sessions
+
+---
+
+## New Auth/Session Failure Tests (7ASF Prefix)
+
+### File: `/client/selenium/e2e/01-authentication/7asf-session-expiry-scenarios.js`
+
+#### Test: "7ASF should handle cart operations when session expires mid-flow"
+**Test Purpose:** Simulates session expiry during cart operations to test auth recovery mechanisms
+**Failure Scenario:** User session expires between adding items to cart and viewing cart, causing auth state mismatch
+**Expected Real-World Issue:** Session timeout during shopping flow requiring re-authentication
+
+#### Test: "7ASF should handle checkout access with expired authentication token"
+**Test Purpose:** Tests checkout access when authentication token has expired but user appears logged in
+**Failure Scenario:** JWT token expires but UI still shows user as authenticated, causing checkout failure
+**Expected Real-World Issue:** Token expiry not properly detected by frontend leading to failed transactions
+
+#### Test: "7ASF should handle multi-tab session invalidation during shopping"
+**Test Purpose:** Simulates session invalidation in one tab affecting shopping flow in another tab
+**Failure Scenario:** User logs out in one tab while shopping in another, causing session conflicts
+**Expected Real-World Issue:** Multi-tab usage causing session state synchronization issues
+
+#### Test: "7ASF should handle insufficient permissions for premium features"
+**Test Purpose:** Tests access to premium features when user lacks required permissions
+**Failure Scenario:** Regular user attempting to access premium checkout options without proper authorization
+**Expected Real-World Issue:** Permission checks not properly implemented for feature access
+
+### File: `/client/selenium/e2e/02-core-shopping/7asf-auth-state-corruption.js`
+
+#### Test: "7ASF should handle corrupted auth state during product browsing"
+**Test Purpose:** Tests product browsing when authentication state becomes corrupted
+**Failure Scenario:** Auth state corruption causes personalized features to fail during browsing
+**Expected Real-World Issue:** Corrupted local storage or session data affecting user experience
+
+#### Test: "7ASF should handle permission escalation attempts in cart operations"
+**Test Purpose:** Tests cart operations when user attempts unauthorized permission escalation
+**Failure Scenario:** User manipulates client-side data to attempt admin-level cart operations
+**Expected Real-World Issue:** Client-side permission validation bypassed leading to security issues
+
+### File: `/client/selenium/e2e/01-authentication/login.js` (Updated)
+
+#### Test: "7ASF should fail login with session conflict from another device"
+**Test Purpose:** Tests login failure when user session conflicts with another device
+**Failure Scenario:** User attempts login while already logged in on another device with session limits
+**Expected Real-World Issue:** Single-session enforcement causing unexpected login failures
+
+#### Test: "7ASF should handle authentication with corrupted user profile data"
+**Test Purpose:** Tests authentication when user profile data is corrupted or incomplete
+**Failure Scenario:** User login succeeds but profile data corruption causes feature access issues
+**Expected Real-World Issue:** Database corruption or migration issues affecting user authentication
 
 ---
 

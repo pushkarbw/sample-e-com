@@ -404,4 +404,109 @@ describe('🔐 1ELF Authentication & User Management', function() {
       await commands.shouldBeVisible('body');
     });
   });
+
+  describe('7ASF Authentication Session Edge Cases', function() {
+    it('7ASF should handle login with concurrent session token validation', async function() {
+      await commands.visit('/login');
+      
+      await commands.driver.executeScript(`
+        localStorage.setItem('authToken', 'existing-session-' + Date.now());
+        localStorage.setItem('sessionExpiry', Date.now() + 300000);
+        localStorage.setItem('refreshToken', 'refresh-' + Date.now());
+      `);
+      
+      await commands.type('form div:nth-child(1) input', testUsers.validUser.email);
+      await commands.type('form div:nth-child(2) input', testUsers.validUser.password);
+      
+      await commands.click('form > div:last-child button');
+      
+      await commands.wait(3000);
+      const currentUrl = await commands.driver.getCurrentUrl();
+      
+      expect(!currentUrl.includes('/login')).to.be.true;
+      
+      await commands.visit('/cart');
+      const cartElements = await commands.getAll('.cart, [data-testid="cart"], .shopping-cart');
+      expect(cartElements.length).to.be.greaterThan(0);
+    });
+
+    it('7ASF should maintain session with corrupted localStorage data', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      
+      await commands.driver.executeScript(`
+        localStorage.setItem('user', 'corrupted_json_data');
+        localStorage.setItem('authToken', JSON.stringify({invalid: 'structure'}));
+        localStorage.setItem('sessionId', null);
+        localStorage.setItem('userPreferences', undefined);
+      `);
+      
+      await commands.visit('/orders');
+      const currentUrl = await commands.driver.getCurrentUrl();
+      
+      expect(
+        currentUrl.includes('/orders') || 
+        currentUrl.includes('/login') || 
+        currentUrl.includes('/')
+      ).to.be.true;
+      
+      const bodyText = await commands.get('body').then(el => el.getText());
+      const hasOrdersContent = bodyText.toLowerCase().includes('order') || 
+                              bodyText.toLowerCase().includes('history') ||
+                              bodyText.toLowerCase().includes('empty');
+      
+      expect(hasOrdersContent || currentUrl.includes('/login')).to.be.true;
+    });
+
+    it('7ASF should handle multiple tab session invalidation', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      
+      await commands.driver.executeScript(`
+        const originalToken = localStorage.getItem('authToken');
+        localStorage.setItem('authToken', '');
+        
+        setTimeout(() => {
+          localStorage.setItem('authToken', 'expired-' + originalToken);
+          localStorage.setItem('tokenInvalidated', 'true');
+        }, 100);
+      `);
+      
+      await commands.wait(500);
+      await commands.visit('/profile');
+      
+      const currentUrl = await commands.driver.getCurrentUrl();
+      const bodyText = await commands.get('body').then(el => el.getText());
+      
+      if (currentUrl.includes('/profile')) {
+        const hasProfileContent = bodyText.toLowerCase().includes('profile') ||
+                                 bodyText.toLowerCase().includes('account') ||
+                                 bodyText.toLowerCase().includes('user');
+        expect(hasProfileContent).to.be.true;
+      } else {
+        expect(currentUrl.includes('/login') || currentUrl.includes('/')).to.be.true;
+      }
+    });
+
+    it('7ASF should process logout with incomplete session cleanup', async function() {
+      await commands.loginAsTestUser(testUsers.validUser.email, testUsers.validUser.password);
+      
+      await commands.driver.executeScript(`
+        localStorage.removeItem('authToken');
+        localStorage.setItem('userProfile', JSON.stringify({
+          email: '${testUsers.validUser.email}',
+          isLoggedIn: true
+        }));
+        localStorage.setItem('cartData', JSON.stringify({items: ['item1', 'item2']}));
+      `);
+      
+      await commands.visit('/cart');
+      const currentUrl = await commands.driver.getCurrentUrl();
+      
+      if (currentUrl.includes('/cart')) {
+        const cartItems = await commands.getAll('.cart-item, [data-testid="cart-item"]');
+        expect(cartItems.length).to.be.greaterThan(0);
+      } else {
+        expect(currentUrl.includes('/login') || currentUrl.includes('/')).to.be.true;
+      }
+    });
+  });
 });
