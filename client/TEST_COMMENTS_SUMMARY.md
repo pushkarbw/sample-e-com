@@ -1,7 +1,7 @@
 # Removed Comments Summary Report
 ## Test Case Comment Removal Analysis
 **Generated on:** September 2, 2025  
-**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF, 4BDCF, 5NF, 6DF and 7ASF
+**Purpose:** Documentation of all comments removed from test cases with prefixes: 1ELF, FT, 2FT, 3TAF, 4BDCF, 5NF, 6DF, 7ASF and 8VRF
 
 ---
 
@@ -1044,3 +1044,172 @@ This document summarizes the intentional test failures created to simulate reali
 - Product catalog displaying null/undefined pricing from database
 
 These tests intentionally fail to expose gaps in data validation that could occur in real applications when QA creates test data without considering edge cases or backend validation mismatches.
+
+---
+
+## Visual Regression Failure Tests (8VRF Prefix) - Comments Summary
+
+### File: `/client/selenium/e2e/02-core-shopping/8vrf-visual-layout-failures.js`
+
+#### Test: "8VRF should display add to cart buttons at exact pixel coordinates"
+**Removed Comments Summary:**
+- Comments about exact button positioning expectations (x=285px, y=150px coordinates)
+- Documentation of pixel-perfect positioning assertions that fail with minor CSS changes
+- Explanations of failure when buttons positioned at 300px instead of expected 285px
+- Comments about CSS flexbox gap property changes affecting button layout
+- Notes about responsive design updates breaking exact coordinate expectations
+
+#### Test: "8VRF should maintain exact product card dimensions"
+**Removed Comments Summary:**
+- Comments about precise card dimension requirements (310x485px cards, 280x200px images)
+- Documentation of exact sizing assertions that break with design system updates
+- Explanations of failures when cards render at 295x470px due to padding changes
+- Comments about CSS Grid layout modifications affecting card proportions
+- Notes about image aspect ratio changes breaking dimension expectations
+
+#### Test: "8VRF should position price elements at specific baseline alignment"
+**Removed Comments Summary:**
+- Comments about precise typography positioning (24px font size, exact y-coordinate alignment)
+- Documentation of baseline alignment assertions that fail with browser font rendering differences
+- Explanations of 2-3px misalignment failures due to line-height calculation variations
+- Comments about font weight expectations (700) failing when web fonts don't load properly
+- Notes about cross-browser font rendering inconsistencies causing alignment failures
+
+#### Test: "8VRF should display cart badge at exact header position"
+**Removed Comments Summary:**
+- Comments about specific badge positioning requirements (x=795px, y=15px, 20x20px dimensions)
+- Documentation of header layout positioning that breaks with navigation changes
+- Explanations of failures when badge positioned at x=810px due to logo resizing
+- Comments about z-index layering expectations in header component
+- Notes about sticky positioning behavior affecting badge placement
+
+#### Test: "8VRF should center modal dialog at exact viewport coordinates"
+**Removed Comments Summary:**
+- Comments about precise modal centering calculations (600x400px modal, calculated center position)
+- Documentation of viewport centering assertions that fail with scrollbar width variations
+- Explanations of 50px off-center failures due to viewport calculation differences
+- Comments about modal backdrop positioning expectations across browsers
+- Notes about responsive modal sizing breaking centering calculations
+
+### File: `/client/selenium/e2e/02-core-shopping/8vrf-responsive-layout-failures.js`
+
+#### Test: "8VRF should display navigation menu at exact mobile breakpoint"
+**Removed Comments Summary:**
+- Comments about precise mobile navigation dimensions (768px width, 60px height at tablet breakpoint)
+- Documentation of breakpoint-specific sizing that fails with CSS box model changes
+- Explanations of failures when navigation renders at 780px due to border-box model differences
+- Comments about responsive breakpoint calculations varying between browsers
+- Notes about viewport meta tag interpretation affecting mobile navigation sizing
+
+#### Test: "8VRF should stack product cards in single column on mobile"
+**Removed Comments Summary:**
+- Comments about mobile layout card specifications (343px wide cards, 20px spacing on 375px viewport)
+- Documentation of mobile stacking behavior that breaks with responsive grid changes
+- Explanations of failures when cards render at 355px width due to margin calculations
+- Comments about CSS Grid auto-fit behavior variations on mobile devices
+- Notes about touch device detection affecting mobile layout rendering
+
+#### Test: "8VRF should display exactly four product columns on desktop"
+**Removed Comments Summary:**
+- Comments about desktop grid column requirements (280px cards with 300px spacing pattern)
+- Documentation of grid layout expectations that fail with CSS Grid algorithm changes
+- Explanations of failures when grid shows 3 columns instead of 4 due to auto-fit variations
+- Comments about CSS gap property support differences affecting column calculations
+- Notes about viewport width changes breaking exact column count expectations
+
+#### Test: "8VRF should display product images with exact aspect ratio"
+**Removed Comments Summary:**
+- Comments about precise image dimension requirements (280x200px, 1.4:1 aspect ratio)
+- Documentation of image sizing that fails with object-fit algorithm differences
+- Explanations of failures when images render at 285x195px due to browser variations
+- Comments about lazy loading affecting image dimension calculations
+- Notes about responsive image behavior breaking aspect ratio expectations
+
+### File: `/client/selenium/e2e/02-core-shopping/product-discovery.js` (Updated)
+
+#### Test: "8VRF should position product images with exact pixel alignment"
+**Removed Comments Summary:**
+- Comments about precise image positioning (280px width, 30px horizontal spacing)
+- Documentation of pixel-perfect alignment that fails with CSS gap property fallbacks
+- Explanations of failures when images have 35px spacing in older browsers
+- Comments about CSS Grid gap property support variations
+- Notes about flexbox fallback behavior affecting image alignment
+
+#### Test: "8VRF should maintain exact product card shadow and border styling"
+**Removed Comments Summary:**
+- Comments about specific styling requirements (box-shadow blur radius, border-radius values)
+- Documentation of styling precision that fails with browser rendering differences
+- Explanations of shadow rendering variations between browser engines
+- Comments about CSS filter effects compatibility across browsers
+- Notes about hardware acceleration affecting shadow calculations
+
+#### Test: "8VRF should display product prices with exact font specifications"
+**Removed Comments Summary:**
+- Comments about typography precision (24px font, weight 700, specific green color #28a745)
+- Documentation of font specifications that fail with web font loading issues
+- Explanations of font weight rendering as 600 instead of 700 with font fallbacks
+- Comments about color rendering differences between displays and browsers
+- Notes about font-display property affecting typography timing
+
+#### Test: "8VRF should position search bar with exact dimensions and spacing"
+**Removed Comments Summary:**
+- Comments about search input specifications (400px width, 44px height, x=100px position)
+- Documentation of form element positioning that fails with container changes
+- Explanations of failures when search bar positioned at x=120px due to padding modifications
+- Comments about input field styling consistency across browsers
+- Notes about form layout responsive behavior affecting search positioning
+
+### File: `/client/selenium/e2e/02-core-shopping/cart-checkout.js` (Updated)
+
+#### Test: "8VRF should position cart items with exact spacing and alignment"
+**Removed Comments Summary:**
+- Comments about cart layout specifications (780px width, 16px vertical spacing)
+- Documentation of spacing precision that fails with margin collapse behavior changes
+- Explanations of failures when items have 24px spacing instead of expected 16px
+- Comments about CSS margin collapse handling differences between browsers
+- Notes about cart item rendering variations affecting layout calculations
+
+#### Test: "8VRF should display cart summary with exact positioning"
+**Removed Comments Summary:**
+- Comments about summary positioning requirements (350px width, x=850px, sticky positioning)
+- Documentation of sidebar positioning that fails with layout reflow changes
+- Explanations of failures when summary positioned at x=830px due to width changes
+- Comments about sticky positioning behavior variations across browsers
+- Notes about scroll behavior affecting sticky element calculations
+
+#### Test: "8VRF should maintain exact quantity control button dimensions"
+**Removed Comments Summary:**
+- Comments about button sizing specifications (32x32px buttons, 48px spacing for input field)
+- Documentation of control dimensions that fail with box model interpretation differences
+- Explanations of failures when buttons render at 30x30px due to border-box variations
+- Comments about input field width calculations affecting button spacing
+- Notes about form control styling consistency across different browsers
+
+#### Test: "8VRF should align form fields with exact grid positioning"
+**Removed Comments Summary:**
+- Comments about form layout specifications (285px name fields, 20px gap, 590px email field)
+- Documentation of field alignment that fails with flexbox algorithm changes
+- Explanations of failures when fields render with 18px gap due to space-between calculations
+- Comments about CSS Grid and Flexbox gap property browser support variations
+- Notes about form responsive behavior affecting field positioning
+
+#### Test: "8VRF should position payment section with exact dimensions"
+**Removed Comments Summary:**
+- Comments about payment section specifications (590px width, y=380px positioning)
+- Documentation of section positioning that fails with form field height variations
+- Explanations of failures when section positioned at y=400px due to field changes
+- Comments about payment form layout dependencies on field dimensions
+- Notes about form validation state affecting payment section positioning
+
+## 8VRF Test Failure Scenarios Simulated
+
+These visual regression tests intentionally fail to represent realistic scenarios QA teams encounter:
+
+1. **Design System Token Updates**: When design tokens change, exact pixel values shift slightly
+2. **CSS Framework Upgrades**: New framework versions may calculate spacing and positioning differently
+3. **Browser Engine Updates**: Different rendering engines handle layout calculations with minor variations
+4. **Web Font Loading Issues**: Font fallbacks cause typography and layout shifts
+5. **Responsive Design Changes**: Breakpoint adjustments affect precise layout expectations
+6. **CSS Property Support Variations**: Newer CSS features have different browser support levels
+
+The 8VRF tests expose the brittleness of pixel-perfect visual assertions and encourage more flexible visual regression testing approaches that account for acceptable variation ranges rather than exact positioning requirements.

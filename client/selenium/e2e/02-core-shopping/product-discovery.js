@@ -390,4 +390,125 @@ describe('🛒 1ELF Core Shopping - Product Discovery', function() {
       await commands.log('Rapid interactions test completed');
     });
   });
+
+  describe('8VRF Visual Layout Regression - Product Grid', function() {
+    it('8VRF should position product images with exact pixel alignment', async function() {
+      await commands.visit('/products');
+      await commands.waitForProductsToLoad();
+
+      const productImages = await commands.getAll('img[alt], .product-image');
+      
+      if (productImages.length >= 2) {
+        const firstImageRect = await productImages[0].getRect();
+        const secondImageRect = await productImages[1].getRect();
+        
+        expect(firstImageRect.width).to.equal(280, 'First product image must be exactly 280px wide');
+        expect(secondImageRect.width).to.equal(280, 'Second product image must be exactly 280px wide');
+        
+        const horizontalSpacing = secondImageRect.x - (firstImageRect.x + firstImageRect.width);
+        expect(horizontalSpacing).to.equal(30, 'Product images must have exactly 30px horizontal spacing');
+        
+        const verticalAlignment = Math.abs(firstImageRect.y - secondImageRect.y);
+        expect(verticalAlignment).to.equal(0, 'Product images must be perfectly aligned vertically');
+      }
+    });
+
+    it('8VRF should maintain exact product card shadow and border styling', async function() {
+      await commands.visit('/products');
+      await commands.waitForProductsToLoad();
+
+      const productCards = await commands.getAll('[data-testid="product-card"], .product-card');
+      
+      if (productCards.length > 0) {
+        const cardStyles = await commands.driver.executeScript(`
+          const card = arguments[0];
+          const computed = window.getComputedStyle(card);
+          return {
+            boxShadow: computed.boxShadow,
+            borderRadius: computed.borderRadius,
+            backgroundColor: computed.backgroundColor,
+            padding: computed.padding
+          };
+        `, productCards[0]);
+        
+        expect(cardStyles.boxShadow).to.equal('rgba(0, 0, 0, 0.1) 0px 2px 8px 0px', 'Product cards must have exact box shadow');
+        expect(cardStyles.borderRadius).to.equal('8px', 'Product cards must have exactly 8px border radius');
+        expect(cardStyles.backgroundColor).to.equal('rgb(255, 255, 255)', 'Product cards must have white background');
+        expect(cardStyles.padding).to.equal('20px', 'Product cards must have exactly 20px padding');
+      }
+    });
+
+    it('8VRF should display product prices with exact font specifications', async function() {
+      await commands.visit('/products');
+      await commands.waitForProductsToLoad();
+
+      const priceElements = await commands.getAll('[data-testid="product-price"], .price');
+      
+      if (priceElements.length > 0) {
+        const priceStyles = await commands.driver.executeScript(`
+          const price = arguments[0];
+          const computed = window.getComputedStyle(price);
+          return {
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            color: computed.color,
+            lineHeight: computed.lineHeight
+          };
+        `, priceElements[0]);
+        
+        expect(priceStyles.fontSize).to.equal('24px', 'Product prices must have exactly 24px font size');
+        expect(priceStyles.fontWeight).to.equal('700', 'Product prices must have font weight of 700');
+        expect(priceStyles.color).to.equal('rgb(40, 167, 69)', 'Product prices must be exact green color #28a745');
+        expect(priceStyles.lineHeight).to.equal('28px', 'Product prices must have exactly 28px line height');
+      }
+    });
+  });
+
+  describe('8VRF Visual Layout Regression - Search Interface', function() {
+    it('8VRF should position search bar with exact dimensions and spacing', async function() {
+      await commands.visit('/products');
+
+      const searchInputs = await commands.getAll('input[placeholder*="Search"], input[type="search"]');
+      
+      if (searchInputs.length > 0) {
+        const searchRect = await searchInputs[0].getRect();
+        
+        expect(searchRect.width).to.equal(400, 'Search input must be exactly 400px wide');
+        expect(searchRect.height).to.equal(44, 'Search input must be exactly 44px tall');
+        expect(searchRect.x).to.equal(100, 'Search input must be positioned at x=100px');
+        
+        const searchStyles = await commands.driver.executeScript(`
+          const input = arguments[0];
+          const computed = window.getComputedStyle(input);
+          return {
+            borderWidth: computed.borderWidth,
+            borderColor: computed.borderColor,
+            paddingLeft: computed.paddingLeft,
+            fontSize: computed.fontSize
+          };
+        `, searchInputs[0]);
+        
+        expect(searchStyles.borderWidth).to.equal('1px', 'Search input border must be exactly 1px');
+        expect(searchStyles.borderColor).to.equal('rgb(221, 221, 221)', 'Search input border must be exact color #ddd');
+        expect(searchStyles.paddingLeft).to.equal('16px', 'Search input left padding must be exactly 16px');
+      }
+    });
+
+    it('8VRF should display filter dropdown with exact positioning relative to search', async function() {
+      await commands.visit('/products');
+
+      const searchInput = await commands.getAll('input[placeholder*="Search"]');
+      const filterDropdown = await commands.getAll('select, .filter-select');
+      
+      if (searchInput.length > 0 && filterDropdown.length > 0) {
+        const searchRect = await searchInput[0].getRect();
+        const filterRect = await filterDropdown[0].getRect();
+        
+        const expectedFilterX = searchRect.x + searchRect.width + 20;
+        expect(filterRect.x).to.equal(expectedFilterX, `Filter dropdown must be positioned at x=${expectedFilterX}px`);
+        expect(filterRect.height).to.equal(44, 'Filter dropdown height must match search input height');
+        expect(filterRect.width).to.equal(200, 'Filter dropdown width must be exactly 200px');
+      }
+    });
+  });
 });

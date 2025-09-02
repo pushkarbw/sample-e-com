@@ -1088,4 +1088,178 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       }
     });
   });
+
+  describe('8VRF Visual Cart Layout Regression', function() {
+    it('8VRF should position cart items with exact spacing and alignment', async function() {
+      await loginUser();
+      await commands.visit('/cart');
+
+      const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
+      
+      if (cartItems.length >= 2) {
+        const firstItemRect = await cartItems[0].getRect();
+        const secondItemRect = await cartItems[1].getRect();
+        
+        expect(firstItemRect.width).to.equal(780, 'Cart items must be exactly 780px wide');
+        expect(secondItemRect.width).to.equal(780, 'All cart items must have identical width');
+        
+        const verticalSpacing = secondItemRect.y - (firstItemRect.y + firstItemRect.height);
+        expect(verticalSpacing).to.equal(16, 'Cart items must have exactly 16px vertical spacing');
+        
+        const horizontalAlignment = Math.abs(firstItemRect.x - secondItemRect.x);
+        expect(horizontalAlignment).to.equal(0, 'Cart items must be perfectly aligned horizontally');
+      }
+    });
+
+    it('8VRF should display cart summary with exact positioning', async function() {
+      await loginUser();
+      await commands.visit('/cart');
+
+      const cartSummary = await commands.getAll('[data-testid="cart-summary"], .cart-summary, .order-summary');
+      
+      if (cartSummary.length > 0) {
+        const summaryRect = await cartSummary[0].getRect();
+        
+        expect(summaryRect.width).to.equal(350, 'Cart summary must be exactly 350px wide');
+        expect(summaryRect.x).to.equal(850, 'Cart summary must be positioned at x=850px');
+        
+        const summaryStyles = await commands.driver.executeScript(`
+          const summary = arguments[0];
+          const computed = window.getComputedStyle(summary);
+          return {
+            position: computed.position,
+            top: computed.top,
+            backgroundColor: computed.backgroundColor,
+            borderRadius: computed.borderRadius
+          };
+        `, cartSummary[0]);
+        
+        expect(summaryStyles.position).to.equal('sticky', 'Cart summary must be sticky positioned');
+        expect(summaryStyles.top).to.equal('100px', 'Cart summary must stick 100px from top');
+        expect(summaryStyles.backgroundColor).to.equal('rgb(255, 255, 255)', 'Cart summary must have white background');
+        expect(summaryStyles.borderRadius).to.equal('8px', 'Cart summary must have 8px border radius');
+      }
+    });
+
+    it('8VRF should maintain exact quantity control button dimensions', async function() {
+      await loginUser();
+      await commands.visit('/cart');
+
+      const quantityButtons = await commands.getAll('[data-testid="quantity-btn"], .quantity-btn, .qty-btn');
+      
+      if (quantityButtons.length >= 2) {
+        const minusButton = quantityButtons[0];
+        const plusButton = quantityButtons[1];
+        
+        const minusRect = await minusButton.getRect();
+        const plusRect = await plusButton.getRect();
+        
+        expect(minusRect.width).to.equal(32, 'Quantity buttons must be exactly 32px wide');
+        expect(minusRect.height).to.equal(32, 'Quantity buttons must be exactly 32px tall');
+        expect(plusRect.width).to.equal(32, 'Plus button must match minus button width');
+        expect(plusRect.height).to.equal(32, 'Plus button must match minus button height');
+        
+        const buttonSpacing = plusRect.x - (minusRect.x + minusRect.width);
+        expect(buttonSpacing).to.equal(48, 'Quantity buttons must have exactly 48px spacing (for input field)');
+      }
+    });
+
+    it('8VRF should display checkout button with exact styling specifications', async function() {
+      await loginUser();
+      await commands.visit('/cart');
+
+      const checkoutButton = await commands.getAll('[data-testid="checkout-btn"], .checkout-btn, button:contains("Checkout")');
+      
+      if (checkoutButton.length > 0) {
+        const buttonRect = await checkoutButton[0].getRect();
+        
+        expect(buttonRect.width).to.equal(350, 'Checkout button must be exactly 350px wide');
+        expect(buttonRect.height).to.equal(48, 'Checkout button must be exactly 48px tall');
+        
+        const buttonStyles = await commands.driver.executeScript(`
+          const btn = arguments[0];
+          const computed = window.getComputedStyle(btn);
+          return {
+            backgroundColor: computed.backgroundColor,
+            borderRadius: computed.borderRadius,
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            textAlign: computed.textAlign
+          };
+        `, checkoutButton[0]);
+        
+        expect(buttonStyles.backgroundColor).to.equal('rgb(0, 123, 255)', 'Checkout button must be exact blue #007bff');
+        expect(buttonStyles.borderRadius).to.equal('6px', 'Checkout button must have 6px border radius');
+        expect(buttonStyles.fontSize).to.equal('16px', 'Checkout button font must be exactly 16px');
+        expect(buttonStyles.fontWeight).to.equal('500', 'Checkout button font weight must be 500');
+        expect(buttonStyles.textAlign).to.equal('center', 'Checkout button text must be centered');
+      }
+    });
+  });
+
+  describe('8VRF Visual Checkout Form Layout', function() {
+    it('8VRF should align form fields with exact grid positioning', async function() {
+      await loginUser();
+      await commands.visit('/checkout');
+
+      const formFields = await commands.getAll('input[type="text"], input[type="email"], select');
+      
+      if (formFields.length >= 4) {
+        const firstName = formFields[0];
+        const lastName = formFields[1];
+        const email = formFields[2];
+        const address = formFields[3];
+        
+        const firstNameRect = await firstName.getRect();
+        const lastNameRect = await lastName.getRect();
+        const emailRect = await email.getRect();
+        const addressRect = await address.getRect();
+        
+        expect(firstNameRect.width).to.equal(285, 'First name field must be exactly 285px wide');
+        expect(lastNameRect.width).to.equal(285, 'Last name field must be exactly 285px wide');
+        expect(emailRect.width).to.equal(590, 'Email field must span full width of 590px');
+        
+        const nameFieldGap = lastNameRect.x - (firstNameRect.x + firstNameRect.width);
+        expect(nameFieldGap).to.equal(20, 'Name fields must have exactly 20px gap');
+        
+        const rowSpacing = emailRect.y - (firstNameRect.y + firstNameRect.height);
+        expect(rowSpacing).to.equal(20, 'Form rows must have exactly 20px vertical spacing');
+      }
+    });
+
+    it('8VRF should position payment section with exact dimensions', async function() {
+      await loginUser();
+      await commands.visit('/checkout');
+
+      const paymentSection = await commands.getAll('[data-testid="payment"], .payment-section, .payment');
+      
+      if (paymentSection.length > 0) {
+        const sectionRect = await paymentSection[0].getRect();
+        
+        expect(sectionRect.width).to.equal(590, 'Payment section must be exactly 590px wide');
+        expect(sectionRect.y).to.equal(380, 'Payment section must be positioned at y=380px');
+        
+        const cardNumberInput = await commands.getAll('input[name*="card"], input[placeholder*="Card"]', paymentSection[0]);
+        if (cardNumberInput.length > 0) {
+          const cardRect = await cardNumberInput[0].getRect();
+          expect(cardRect.width).to.equal(590, 'Card number input must span full section width');
+          expect(cardRect.height).to.equal(44, 'Card input must be exactly 44px tall');
+        }
+        
+        const expiryInputs = await commands.getAll('input[name*="expiry"], input[placeholder*="MM"]', paymentSection[0]);
+        const cvvInputs = await commands.getAll('input[name*="cvv"], input[placeholder*="CVV"]', paymentSection[0]);
+        
+        if (expiryInputs.length > 0 && cvvInputs.length > 0) {
+          const expiryRect = await expiryInputs[0].getRect();
+          const cvvRect = await cvvInputs[0].getRect();
+          
+          expect(expiryRect.width).to.equal(285, 'Expiry input must be exactly 285px wide');
+          expect(cvvRect.width).to.equal(285, 'CVV input must be exactly 285px wide');
+          
+          const paymentFieldGap = cvvRect.x - (expiryRect.x + expiryRect.width);
+          expect(paymentFieldGap).to.equal(20, 'Payment fields must have exactly 20px gap');
+        }
+      }
+    });
+  });
 });
