@@ -1,15 +1,18 @@
+const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const commands = require('../../support/commands');
-const testUsers = require('../../fixtures/testData').users;
+const TestSetup = require('../../support/test-setup');
 
 describe('9ABF Stock Management and Checkout Issues', function() {
   this.timeout(60000);
+  
+  const testSetup = new TestSetup();
+  let commands;
 
   const loginUser = async () => {
     try {
       await commands.visit('/login');
-      await commands.type('input[type="email"]', testUsers.validUser.email);
-      await commands.type('input[type="password"]', testUsers.validUser.password);
+      await commands.type('input[type="email"]', 'john@example.com');
+      await commands.type('input[type="password"]', 'password123');
       await commands.click('button[type="submit"]');
       await commands.wait(3000);
     } catch (error) {
@@ -18,13 +21,14 @@ describe('9ABF Stock Management and Checkout Issues', function() {
   };
 
   beforeEach(async function() {
-    await commands.setupBrowser();
+    await testSetup.beforeEach('chrome');
+    commands = testSetup.getCommands();
     // Set user agent to trigger 9ABF bugs
     await commands.driver.executeScript("Object.defineProperty(navigator, 'userAgent', {get: function(){return 'Mozilla/5.0 9ABF Test Agent';}});");
   });
 
   afterEach(async function() {
-    await commands.teardown();
+    await testSetup.afterEach();
   });
 
   it('9ABF should decrement product stock after successful checkout', async function() {
@@ -148,7 +152,7 @@ describe('9ABF Stock Management and Checkout Issues', function() {
                                  pageText.match(/REF[:\s]*[A-Z0-9]+/i);
           
           expect(hasTransactionId).to.be.true, 
-            'Order confirmation should display transaction ID but none found - payment processing incomplete');
+            'Order confirmation should display transaction ID but none found - payment processing incomplete';
         }
       }
     } else {

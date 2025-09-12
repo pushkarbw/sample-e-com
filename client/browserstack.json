@@ -49,9 +49,9 @@
         ]
     },
     "connection_settings": {
-        "local": false,
-        "local_identifier": null,
-        "local_mode": null,
+        "local": true,
+        "local_identifier": "sample-e-com",
+        "local_mode": "always-on",
         "local_config_file": null
     },
     "disable_usage_reporting": false

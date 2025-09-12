@@ -54,12 +54,12 @@ describe('🔐 6DF Authentication with Invalid User Data', function() {
 
       const emailFields = await commands.getAll('input[type="email"], input[name*="email"]');
       if (emailFields.length > 0) {
-        await emailFields[0].sendKeys('тест@тест.рф');
+        await emailFields[0].sendKeys('test@domain');
       }
 
       const passwordFields = await commands.getAll('input[type="password"], input[name*="password"]');
       if (passwordFields.length > 0) {
-        await passwordFields[0].sendKeys('пароль🔑');
+        await passwordFields[0].sendKeys('pass@#$%^&*()');
       }
 
       const submitButtons = await commands.getAll('button[type="submit"], button:contains("Login")');
@@ -68,7 +68,7 @@ describe('🔐 6DF Authentication with Invalid User Data', function() {
         await commands.wait(3000);
 
         const errorMessages = await commands.getAll('.error, .invalid, [data-testid="error-message"]');
-        expect(errorMessages.length).to.equal(0, 'Should accept unicode credentials without validation errors');
+        expect(errorMessages.length).to.equal(0, 'Should accept malformed email and special chars without validation errors');
       }
     });
   });

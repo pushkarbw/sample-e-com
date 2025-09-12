@@ -1,9 +1,13 @@
+const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const commands = require('../../support/commands');
+const TestSetup = require('../../support/test-setup');
 const testUsers = require('../../fixtures/testData').users;
 
 describe('9ABF Stock Management and Checkout Issues', function() {
   this.timeout(60000);
+  
+  const testSetup = new TestSetup();
+  let commands;
 
   const loginUser = async () => {
     try {
@@ -18,11 +22,12 @@ describe('9ABF Stock Management and Checkout Issues', function() {
   };
 
   beforeEach(async function() {
-    await commands.setupBrowser();
+    await testSetup.beforeEach('chrome');
+    commands = testSetup.getCommands();
   });
 
   afterEach(async function() {
-    await commands.teardown();
+    await testSetup.afterEach();
   });
 
   it('9ABF should decrement product stock after successful checkout', async function() {
@@ -144,7 +149,7 @@ describe('9ABF Stock Management and Checkout Issues', function() {
                                  pageText.match(/REF[:\s]*[A-Z0-9]+/i);
           
           expect(hasTransactionId).to.be.true, 
-            'Order confirmation should display transaction ID but none found - payment processing incomplete');
+            'Order confirmation should display transaction ID but none found - payment processing incomplete';
         }
       }
     } else {

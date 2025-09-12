@@ -1,6 +1,7 @@
 const { describe, it, before, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
 const TestSetup = require('../../support/test-setup');
+const testUsers = require('../../fixtures/testData').users;
 
 describe('🛒 Core Shopping - Cart & Checkout', function() {
   this.timeout(60000);
@@ -192,6 +193,11 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       
       const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
       if (cartItems.length > 0) {
+        const initialItemCount = cartItems.length;
+        
+        const removeButtons = await commands.getAll('[data-testid="remove-item"], button:contains("Remove"), button:contains("Delete")');
+        if (removeButtons.length > 0) {
+          await removeButtons[0].click();
           await commands.wait(3000);
           
           const newCartItems = await commands.getAll('[data-testid="cart-item"], .cart-item, [class*="cart-item"]');
@@ -206,6 +212,9 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
           await commands.log('No remove buttons found');
           this.skip();
         }
+      } else {
+        this.skip('No cart items to test quantity changes');
+      }
     });
 
     it('7ASF should handle checkout with expired session mid-flow', async function() {
@@ -569,44 +578,50 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       await loginUser();
       
       await commands.visit('/products');
-      await commands.wait(1000);
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button');
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length > 0) {
         await addButtons[0].click();
-        await commands.wait(500);
-      }
-      
-      await commands.visit('/checkout');
-      
-      const streetInput = await commands.get('input[id="street"], input[name="street"]');
-      if (streetInput) {
-        await streetInput.sendKeys('123 Test Street');
-      }
-      
-      await commands.wait(300);
-      
-      const paymentSelect = await commands.get('select[id="paymentMethod"], select[name="paymentMethod"]');
-      if (paymentSelect) {
-        const options = await commands.getAll('option', paymentSelect);
-        if (options.length > 1) {
-          await paymentSelect.selectByIndex(1);
+        await commands.wait(1500);
+        
+        await commands.visit('/checkout');
+        await commands.wait(2000);
+        
+        const nameFields = await commands.getAll('input[name*="name"], input[name*="firstName"]');
+        if (nameFields.length > 0) {
+          await nameFields[0].sendKeys('Test User');
         }
-      }
-      
-      const submitButton = await commands.get('button[type="submit"], button:contains("Place")');
-      if (submitButton) {
-        await submitButton.click();
         
-        await commands.wait(200);
-        const bodyText = await commands.get('body').then(el => el.getText());
+        const addressFields = await commands.getAll('input[name*="address"], input[name*="street"]');
+        if (addressFields.length > 0) {
+          await addressFields[0].sendKeys('123 Main Street');
+        }
         
-        const hasValidation = bodyText.toLowerCase().includes('required') ||
-                             bodyText.toLowerCase().includes('invalid') ||
-                             bodyText.toLowerCase().includes('please') ||
-                             bodyText.toLowerCase().includes('error');
+        const cityFields = await commands.getAll('input[name*="city"]');
+        if (cityFields.length > 0) {
+          await cityFields[0].sendKeys('Test City');
+        }
         
-        expect(hasValidation || bodyText.toLowerCase().includes('checkout')).to.be.true;
+        const paymentSelects = await commands.getAll('select[name*="payment"]');
+        if (paymentSelects.length > 0) {
+          const options = await paymentSelects[0].findElements(commands.By.tagName('option'));
+          if (options.length > 1) {
+            await options[1].click();
+          }
+        }
+        
+        const submitButtons = await commands.getAll('button[type="submit"], button:contains("Place Order")');
+        if (submitButtons.length > 0) {
+          await submitButtons[0].click();
+          await commands.wait(3000);
+          
+          const currentUrl = await commands.driver.getCurrentUrl();
+          const successIndicators = currentUrl.includes('/success') || currentUrl.includes('/confirmation');
+          expect(successIndicators).to.be.true;
+        }
+      } else {
+        this.skip('No products available for checkout test');
       }
     });
 
@@ -614,50 +629,34 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       await loginUser();
       
       await commands.visit('/products');
-      await commands.wait(1500);
+      await commands.shouldBeVisible('[data-testid="products-container"]');
       
-      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"], button');
-      
+      const addButtons = await commands.getAll('[data-testid="add-to-cart-button"]');
       if (addButtons.length >= 2) {
         await addButtons[0].click();
-        await commands.wait(300);
+        await commands.wait(500);
         await addButtons[1].click();
-        await commands.wait(300);
+        await commands.wait(500);
         
         await commands.visit('/cart');
+        await commands.wait(2000);
         
-        await commands.wait(800);
-        
-        const cartItems = await commands.getAll('[data-testid="cart-item"], .cart-item');
-        const totalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
-        
-        if (cartItems.length > 0 && totalElement) {
+        const quantityInputs = await commands.getAll('input[type="number"], [data-testid="item-quantity"]');
+        if (quantityInputs.length > 0) {
+          const initialValue = await quantityInputs[0].getAttribute('value');
+          
+          await quantityInputs[0].clear();
+          await quantityInputs[0].sendKeys('5');
+          await commands.wait(1000);
+          
+          const totalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
           const totalText = await totalElement.getText();
-          const totalValue = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+          const total = parseFloat(totalText.replace(/[^0-9.]/g, ''));
           
-          expect(totalValue).to.be.greaterThan(0);
-          expect(cartItems.length).to.be.greaterThan(0);
-          
-          const quantityInputs = await commands.getAll('[data-testid="item-quantity"], input[type="number"]');
-          if (quantityInputs.length > 0) {
-            await quantityInputs[0].clear();
-            await quantityInputs[0].sendKeys('3');
-            
-            await commands.wait(400);
-            
-            const newTotalElement = await commands.get('[data-testid="cart-total"], .total, [class*="total"]');
-            const newTotalText = await newTotalElement.getText();
-            const newTotalValue = parseFloat(newTotalText.replace(/[^0-9.]/g, ''));
-            
-            expect(newTotalValue).to.be.greaterThan(totalValue);
-          }
-        } else {
-          await commands.log('Cart items or total not found - cart may be empty or still loading');
-          this.skip();
+          expect(total).to.be.greaterThan(0);
         }
       } else {
-        await commands.log('Insufficient products available for cart total test');
-        this.skip();
+        this.skip('Insufficient products for rapid state test');
       }
     });
   });

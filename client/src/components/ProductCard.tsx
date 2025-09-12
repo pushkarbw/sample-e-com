@@ -180,11 +180,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated || !product.stock || product.stock <= 0) return;
+    if (!isAuthenticated || !product.stock || product.stock <= 0 || isAddingToCart) return;
     
     try {
       setIsAddingToCart(true);
       await addToCart(product.id, 1);
+      
+      // Add a small delay to prevent rapid clicks causing race conditions
+      await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error) {
       console.error('Failed to add to cart:', error);
     } finally {
@@ -217,7 +220,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isOutOfStock = !product.stock || product.stock <= 0;
 
   return (
-    <Card data-testid="product-card">
+    <Card data-testid="product-card" data-product-id={product.id}>
       <ImageContainer>
         {imageError ? (
           <ImagePlaceholder>No Image Available</ImagePlaceholder>
@@ -226,33 +229,44 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.imageUrl || 'https://via.placeholder.com/300x250?text=No+Image'}
             alt={product.name}
             onError={handleImageError}
+            data-testid="product-image"
           />
         )}
       </ImageContainer>
       
       <CardContent>
         <ProductTitle data-testid="product-name">{product.name}</ProductTitle>
-        <ProductCategory>{product.category}</ProductCategory>
+        <ProductCategory data-testid="product-category">{product.category}</ProductCategory>
         
         <PriceContainer>
-          <Price data-testid="product-price">${product.price.toFixed(2)}</Price>
+          <Price data-testid="product-price" data-price={product.price}>
+            ${product.price.toFixed(2)}
+          </Price>
           {product.originalPrice && product.originalPrice > product.price && (
-            <OriginalPrice>${product.originalPrice.toFixed(2)}</OriginalPrice>
+            <OriginalPrice data-testid="original-price">
+              ${product.originalPrice.toFixed(2)}
+            </OriginalPrice>
           )}
         </PriceContainer>
         
         {product.rating && (
-          <RatingContainer>
+          <RatingContainer data-testid="product-rating">
             <StarRating>
               {renderStars(product.rating)}
             </StarRating>
             {product.reviewCount && (
-              <ReviewCount>({product.reviewCount} reviews)</ReviewCount>
+              <ReviewCount data-testid="review-count">
+                ({product.reviewCount} reviews)
+              </ReviewCount>
             )}
           </RatingContainer>
         )}
         
-        <StockStatus inStock={!isOutOfStock} data-testid="stock-status">
+        <StockStatus 
+          inStock={!isOutOfStock} 
+          data-testid="stock-status"
+          data-stock={product.stock || 0}
+        >
           {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
         </StockStatus>
         
@@ -260,14 +274,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {isAuthenticated && (
             <AddToCartButton
               data-testid="add-to-cart-button"
+              className="add-to-cart-btn"
               onClick={handleAddToCart}
               disabled={isOutOfStock || isAddingToCart}
+              aria-label={`Add ${product.name} to cart`}
+              data-loading={isAddingToCart}
             >
               {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </AddToCartButton>
           )}
           
-          <ViewDetailsButton to={`/products/${product.id}`} data-testid="view-details-button">
+          <ViewDetailsButton 
+            to={`/products/${product.id}`} 
+            data-testid="view-details-button"
+            className="view-details-btn"
+            aria-label={`View details for ${product.name}`}
+          >
             View Details
           </ViewDetailsButton>
         </ButtonContainer>

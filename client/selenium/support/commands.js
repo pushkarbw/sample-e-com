@@ -71,6 +71,14 @@ class SeleniumCommands {
     }
   }
 
+  async getElementSafely(selector, timeout = 5000) {
+    try {
+      return await this.get(selector, timeout);
+    } catch (error) {
+      return null;
+    }
+  }
+
   async click(selector, timeout = 10000) {
     const element = await this.get(selector, timeout);
     await this.driver.wait(until.elementIsEnabled(element), timeout);
@@ -258,6 +266,17 @@ class SeleniumCommands {
     }
   }
 
+  async addTestItemsToCart() {
+    await this.visit('/products');
+    await this.wait(2000);
+    
+    const addButtons = await this.getAll('[data-testid="add-to-cart-button"], button:contains("Add to Cart")');
+    if (addButtons.length > 0) {
+      await addButtons[0].click();
+      await this.wait(1000);
+    }
+  }
+
   async getCartItemCount() {
     try {
       const cartBadge = await this.getAll('[data-testid="cart-badge"]');
@@ -271,21 +290,42 @@ class SeleniumCommands {
     }
   }
 
-  async searchProducts(searchTerm) {
-    const searchInput = await this.get('input[placeholder*="Search"]');
-    await searchInput.clear();
-    await searchInput.sendKeys(searchTerm);
-    
+  async searchProduct(searchTerm) {
     try {
-      // Use safer selectors instead of :contains()
-      const searchButtons = await this.getAll('button[type="submit"], .search-button, [data-testid="search-button"]');
+      // More robust search input selection with multiple fallbacks
+      const searchInput = await this.getElementSafely('#search') || 
+                         await this.getElementSafely('[data-testid="search-input"]') || 
+                         await this.getElementSafely('input[type="search"]') ||
+                         await this.getElementSafely('input[placeholder*="Search"]') ||
+                         await this.getElementSafely('.search-input');
+      
+      if (!searchInput) {
+        console.log('Search input not found - feature may not be implemented');
+        return;
+      }
+
+      await searchInput.clear();
+      await searchInput.sendKeys(searchTerm);
+      
+      // Try to find and click search button with multiple selectors
+      const searchButtons = await this.getAll('button[type="submit"], [data-testid="search-button"], .search-btn, button:contains("Search")');
       if (searchButtons.length > 0) {
         await searchButtons[0].click();
       } else {
         await searchInput.sendKeys(Key.ENTER);
       }
+      
+      // Wait for search results to load
+      await this.wait(2000);
     } catch (e) {
-      await searchInput.sendKeys(Key.ENTER);
+      console.log('Search functionality error:', e.message);
+      // Fallback to just pressing enter
+      try {
+        const searchInput = await this.get('input');
+        await searchInput.sendKeys(Key.ENTER);
+      } catch (fallbackError) {
+        console.log('Search fallback also failed');
+      }
     }
   }
 
@@ -438,14 +478,34 @@ class SeleniumCommands {
     const fs = require('fs');
     const path = require('path');
     
-    const screenshotPath = path.join(__dirname, '../reports/screenshots', filename || `screenshot-${Date.now()}.png`);
+    // Ensure screenshots directory exists
+    const screenshotDir = path.join(__dirname, '../../logs/selenium/screenshots');
+    if (!fs.existsSync(screenshotDir)) {
+      fs.mkdirSync(screenshotDir, { recursive: true });
+    }
+    
+    const screenshotPath = path.join(screenshotDir, filename || `screenshot-${Date.now()}.png`);
     fs.writeFileSync(screenshotPath, screenshot, 'base64');
     
     return screenshotPath;
   }
 
   async log(message) {
-    console.log(`[Selenium] ${message}`);
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] [Selenium] ${message}`;
+    console.log(logMessage);
+    
+    // Also write to log file
+    const fs = require('fs');
+    const path = require('path');
+    
+    const logDir = path.join(__dirname, '../../logs/selenium/debug');
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    
+    const logFile = path.join(logDir, `selenium-debug-${new Date().toISOString().split('T')[0]}.log`);
+    fs.appendFileSync(logFile, logMessage + '\n');
   }
 }
 

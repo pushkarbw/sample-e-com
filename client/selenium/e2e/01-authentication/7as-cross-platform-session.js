@@ -1,9 +1,11 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { describe, it, beforeEach, afterEach } = require('mocha');
 const { expect } = require('chai');
-const SeleniumCommands = require('../../support/commands');
+const TestSetup = require('../../support/test-setup');
 
 describe('7ASF Cross-Platform Session Validation', function() {
-  let driver;
+  this.timeout(60000);
+  
+  const testSetup = new TestSetup();
   let commands;
   
   const testUsers = {
@@ -16,17 +18,12 @@ describe('7ASF Cross-Platform Session Validation', function() {
   };
 
   beforeEach(async function() {
-    driver = await new Builder().forBrowser('chrome').build();
-    commands = new SeleniumCommands(driver, {
-      baseUrl: process.env.BASE_URL || 'http://localhost:3000'
-    });
-    await commands.clearAllStorage();
+    await testSetup.beforeEach('chrome');
+    commands = testSetup.getCommands();
   });
 
   afterEach(async function() {
-    if (driver) {
-      await driver.quit();
-    }
+    await testSetup.afterEach();
   });
 
   describe('7ASF Token Refresh Edge Cases', function() {
