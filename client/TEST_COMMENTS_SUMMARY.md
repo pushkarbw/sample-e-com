@@ -993,7 +993,7 @@ This document summarizes the intentional test failures created to simulate reali
 ### 6DF Authentication with Invalid User Data (`6df-invalid-auth-data.js`)
 
 **6DF should accept registration with inconsistent password validation**
-- Submits registration with mismatched passwords (password123 vs password124)
+- Submits registration with mismatched passwords (Ecomm@123 vs password124)
 - Includes empty name field
 - Expected failure: Should reject mismatched passwords but test expects success
 

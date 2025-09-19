@@ -14,7 +14,7 @@ describe('🌐 Cross-Browser Compatibility', function() {
   // Shared test configuration
   const testUser = {
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   };
 
   describe('Core Application Functionality Across Browsers', function() {

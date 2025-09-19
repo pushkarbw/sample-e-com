@@ -143,7 +143,7 @@ describe('⚡ Performance & Load Testing', () => {
       // Simple login first
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -212,7 +212,7 @@ describe('⚡ Performance & Load Testing', () => {
       // Simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -441,7 +441,7 @@ describe('⚡ Performance & Load Testing', () => {
       // Simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       

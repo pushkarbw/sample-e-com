@@ -5,7 +5,7 @@ describe('🛒 Core Shopping Functionality', () => {
     apiUrl: Cypress.env('apiUrl'),
     defaultUser: {
       email: 'john@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     }
   };
 
@@ -367,7 +367,7 @@ describe('🛒 3TAF Shopping Flow - Timing Dependencies', () => {
   const testConfig = {
     defaultUser: {
       email: 'john@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     }
   };
 

@@ -5,7 +5,7 @@ describe('🏪 Complete E-Commerce Application Test Suite', () => {
       firstName: 'Test',
       lastName: 'User',
       email: 'test@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     },
     testTimeout: 10000,
     retryAttempts: 2

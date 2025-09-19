@@ -11,7 +11,7 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
   
   const testUser = {
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   };
 
   before(async function() {
@@ -94,7 +94,7 @@ describe('🛒 Core Shopping - Cart & Checkout', function() {
       if (currentUrl.includes('/login')) {
         // Need to login first
         await commands.type('#email', 'john@example.com');
-        await commands.type('#password', 'password123');
+        await commands.type('#password', 'Ecomm@123');
         await commands.click('button[type="submit"]');
         await commands.wait(3000);
         

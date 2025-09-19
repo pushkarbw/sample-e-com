@@ -209,7 +209,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // First do a simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       
       // Wait a moment for login to process
@@ -232,7 +232,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // Simple login first
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -265,7 +265,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // Simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -425,7 +425,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // Simple login first
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -480,7 +480,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // Simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       
@@ -534,7 +534,7 @@ describe('⚠️ Error Handling & Edge Cases (Updated for Real App)', () => {
       // Simple login
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       cy.wait(2000);
       

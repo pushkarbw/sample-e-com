@@ -98,9 +98,9 @@ describe('Login Component', () => {
       renderWithRouter(<Login />);
       
       const passwordInput = screen.getByLabelText('Password');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       
-      expect(passwordInput).toHaveValue('password123');
+      expect(passwordInput).toHaveValue('Ecomm@123');
     });
 
     test('clears error message when user starts typing', async () => {
@@ -141,12 +141,12 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       expect(mockUseAuth.login).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       });
     });
 
@@ -175,7 +175,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       expect(screen.getByText('Logging in...')).toBeInTheDocument();
@@ -195,7 +195,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       await waitFor(() => {
@@ -214,7 +214,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       await waitFor(() => {
@@ -256,7 +256,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       await waitFor(() => {
@@ -275,7 +275,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       await waitFor(() => {
@@ -320,12 +320,12 @@ describe('Login Component', () => {
       const passwordInput = screen.getByLabelText('Password');
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.keyboard('{Enter}');
       
       expect(mockUseAuth.login).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       });
     });
 
@@ -409,7 +409,7 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       
       // Try to submit multiple times quickly
       await user.click(submitButton);
@@ -429,10 +429,10 @@ describe('Login Component', () => {
       const passwordInput = screen.getByLabelText('Password');
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       
       expect(emailInput).toHaveValue('test@example.com');
-      expect(passwordInput).toHaveValue('password123');
+      expect(passwordInput).toHaveValue('Ecomm@123');
     });
 
     test('maintains form state during loading', async () => {
@@ -446,12 +446,12 @@ describe('Login Component', () => {
       const submitButton = screen.getByRole('button', { name: 'Login' });
       
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
+      await user.type(passwordInput, 'Ecomm@123');
       await user.click(submitButton);
       
       // Values should be maintained during loading
       expect(emailInput).toHaveValue('test@example.com');
-      expect(passwordInput).toHaveValue('password123');
+      expect(passwordInput).toHaveValue('Ecomm@123');
       
       await waitFor(() => {
         expect(screen.getByText('Login')).toBeInTheDocument();

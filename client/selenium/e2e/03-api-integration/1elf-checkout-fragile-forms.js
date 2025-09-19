@@ -11,7 +11,7 @@ describe('🔄 1ELF Checkout Flow - Fragile Form Interactions', function() {
   
   const testUser = {
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   };
 
   const testAddressData = {

@@ -11,7 +11,7 @@ describe('🔗 API Integration & Backend Communication', function() {
   const testConfig = {
     defaultUser: {
       email: 'john@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     }
   };
 

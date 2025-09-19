@@ -137,7 +137,7 @@ describe('⚠️ Error Handling & Edge Cases', function() {
       // Open a new window/tab scenario simulation
       await commands.visit('/login');
       await commands.type('#email', 'john@example.com');
-      await commands.type('#password', 'password123');
+      await commands.type('#password', 'Ecomm@123');
       await commands.click('button[type="submit"]');
       
       await commands.wait(2000);
@@ -292,7 +292,7 @@ describe('⚠️ Error Handling & Edge Cases', function() {
       try {
         for (const input of basicUnicodeInputs) {
           await commands.type('#email', input, { clear: true });
-          await commands.type('#password', 'Password123!', { clear: true });
+          await commands.type('#password', 'Ecomm@123!', { clear: true });
           await commands.click('button[type="submit"]');
           
           // Should handle international characters gracefully
@@ -342,7 +342,7 @@ describe('⚠️ Error Handling & Edge Cases', function() {
       await commands.visit('/login');
       
       await commands.type('#email', 'test@example.com');
-      await commands.type('#password', 'password123');
+      await commands.type('#password', 'Ecomm@123');
       
       // Rapidly submit form multiple times
       const submitButton = await commands.get('button[type="submit"]');

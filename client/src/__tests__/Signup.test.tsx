@@ -163,7 +163,7 @@ describe('Signup Page', () => {
       fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: 'John' } });
       fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: 'Doe' } });
       fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'john.doe@example.com' } });
-      fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+      fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Ecomm@123' } });
     };
 
     test('submits form with valid data', async () => {
@@ -191,7 +191,7 @@ describe('Signup Page', () => {
           firstName: 'John',
           lastName: 'Doe',
           email: 'john.doe@example.com',
-          password: 'password123'
+          password: 'Ecomm@123'
         });
       });
       

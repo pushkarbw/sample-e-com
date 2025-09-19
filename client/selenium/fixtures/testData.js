@@ -5,14 +5,14 @@ const users = {
     firstName: 'Test',
     lastName: 'User',
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   },
   testUser: {
     id: 'user-1',
     firstName: 'Test',
     lastName: 'User',
     email: 'test@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   },
   adminUser: {
     id: 'admin-1',

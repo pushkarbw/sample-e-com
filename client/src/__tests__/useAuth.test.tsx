@@ -115,7 +115,7 @@ describe('useAuth Hook', () => {
       
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -170,7 +170,7 @@ describe('useAuth Hook', () => {
 
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -190,7 +190,7 @@ describe('useAuth Hook', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -228,7 +228,7 @@ describe('useAuth Hook', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'existing@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -335,7 +335,7 @@ describe('useAuth Hook', () => {
       
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -392,7 +392,7 @@ describe('useAuth Hook', () => {
 
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       await act(async () => {
@@ -431,7 +431,7 @@ describe('useAuth Hook', () => {
       
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       // Perform login and logout rapidly
@@ -495,7 +495,7 @@ describe('useAuth Hook', () => {
 
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       // The login should still work but might have undefined token
@@ -515,7 +515,7 @@ describe('useAuth Hook', () => {
       
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       // Simulate multiple login attempts
@@ -538,7 +538,7 @@ describe('useAuth Hook', () => {
       
       const credentials = {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
       };
 
       // First, perform a normal login to establish authenticated state

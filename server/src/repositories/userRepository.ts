@@ -14,13 +14,13 @@ class UserRepository {
     const testUsers = [
       {
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
         firstName: 'John',
         lastName: 'Doe'
       },
       {
         email: 'jane@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
         firstName: 'Jane',
         lastName: 'Smith'
       }

@@ -36,7 +36,7 @@ const testConfig = {
     // Standard test user (should exist in test database)
     valid: {
       email: 'test@example.com',
-      password: 'password123',
+      password: 'Ecomm@123',
       firstName: 'Test',
       lastName: 'User'
     },

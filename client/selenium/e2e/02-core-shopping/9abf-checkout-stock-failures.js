@@ -12,7 +12,7 @@ describe('9ABF Stock Management and Checkout Issues', function() {
     try {
       await commands.visit('/login');
       await commands.type('input[type="email"]', 'john@example.com');
-      await commands.type('input[type="password"]', 'password123');
+      await commands.type('input[type="password"]', 'Ecomm@123');
       await commands.click('button[type="submit"]');
       await commands.wait(3000);
     } catch (error) {

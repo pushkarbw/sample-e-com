@@ -11,7 +11,7 @@ describe('7ASF Cross-Platform Session Validation', function() {
   const testUsers = {
     validUser: {
       email: 'john@example.com',
-      password: 'password123',
+      password: 'Ecomm@123',
       firstName: 'John',
       lastName: 'Doe'
     }

@@ -2,7 +2,7 @@ describe('🛒 3TAF Form Interactions - Async Timing Issues', () => {
   const testConfig = {
     defaultUser: {
       email: 'john@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     },
     newUser: {
       email: `test-${Date.now()}@example.com`,
@@ -316,11 +316,11 @@ describe('🛒 3TAF Form Interactions - Async Timing Issues', () => {
           cy.wrap(currentPasswordInputs.first()).type(testConfig.defaultUser.password);
           cy.wait(50);
           
-          cy.wrap(newPasswordInputs.first()).type('NewPassword123!');
+          cy.wrap(newPasswordInputs.first()).type('NewEcomm@123!');
           cy.wait(50);
           
           if (confirmPasswordInputs.length > 0) {
-            cy.wrap(confirmPasswordInputs.first()).type('NewPassword123!');
+            cy.wrap(confirmPasswordInputs.first()).type('NewEcomm@123!');
             cy.wait(50);
           }
           
