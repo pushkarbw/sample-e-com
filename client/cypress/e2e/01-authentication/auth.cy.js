@@ -2,7 +2,7 @@ describe('🔐 Authentication & User Management', () => {
   const testUsers = {
     validUser: {
       email: 'john@example.com', // Use the actual test user that exists
-      password: 'password123',
+      password: 'Ecomm@123',
       firstName: 'John',
       lastName: 'Doe'
     },
@@ -251,8 +251,8 @@ describe('🔐 Authentication & User Management', () => {
       cy.get('body').then(($body) => {
         if ($body.find('input[type="password"]').length > 0) {
           cy.get('input[name="currentPassword"]').type(testUsers.validUser.password);
-          cy.get('input[name="newPassword"]').type('NewPassword123!');
-          cy.get('input[name="confirmPassword"]').type('NewPassword123!');
+          cy.get('input[name="newPassword"]').type('NewEcomm@123!');
+          cy.get('input[name="confirmPassword"]').type('NewEcomm@123!');
           cy.get('button[type="submit"]').click();
           cy.get('body').should('contain', 'updated');
         } else {

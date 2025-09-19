@@ -10,7 +10,7 @@ describe('🛒 1ELF Cart Dynamic Elements - Selector Dependency Tests', function
   
   const testConfig = {
     users: {
-      valid: { email: 'john@example.com', password: 'password123' }
+      valid: { email: 'john@example.com', password: 'Ecomm@123' }
     }
   };
 

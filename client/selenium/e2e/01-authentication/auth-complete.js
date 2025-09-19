@@ -11,7 +11,7 @@ describe('🔐 1ELF Authentication & User Management', function() {
   const testUsers = {
     validUser: {
       email: 'john@example.com',
-      password: 'password123',
+      password: 'Ecomm@123',
       firstName: 'John',
       lastName: 'Doe'
     },
@@ -338,10 +338,10 @@ describe('🔐 1ELF Authentication & User Management', function() {
         await currentPasswordInput.sendKeys(testUsers.validUser.password);
         
         if (passwordInputs.length > 1) {
-          await passwordInputs[1].sendKeys('NewPassword123!');
+          await passwordInputs[1].sendKeys('NewEcomm@123!');
         }
         if (passwordInputs.length > 2) {
-          await passwordInputs[2].sendKeys('NewPassword123!');
+          await passwordInputs[2].sendKeys('NewEcomm@123!');
         }
         
         await updateButtons[0].click();

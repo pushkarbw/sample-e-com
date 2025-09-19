@@ -29,7 +29,7 @@ describe('🔐 6DF Authentication with Invalid User Data', function() {
 
       const passwordFields = await commands.getAll('input[type="password"], input[name*="password"]');
       if (passwordFields.length >= 2) {
-        await passwordFields[0].sendKeys('password123');
+        await passwordFields[0].sendKeys('Ecomm@123');
         await passwordFields[1].sendKeys('password124');
       }
 
@@ -92,7 +92,7 @@ describe('🔐 6DF Authentication with Invalid User Data', function() {
 
       const passwordFields = await commands.getAll('input[type="password"], input[name*="password"]');
       if (passwordFields.length > 0) {
-        await passwordFields[0].sendKeys('password123');
+        await passwordFields[0].sendKeys('Ecomm@123');
       }
 
       const submitButtons = await commands.getAll('button[type="submit"], button:contains("Login")');

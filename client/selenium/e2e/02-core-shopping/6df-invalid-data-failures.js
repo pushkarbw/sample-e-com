@@ -10,7 +10,7 @@ describe('🛒 6DF Cart Operations with Invalid Data', function() {
   
   const testUser = {
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   };
 
   before(async function() {

@@ -1,5 +1,5 @@
 describe('🔐 Authentication & User Management', () => {
-  const validUser = { email: 'john@example.com', password: 'password123' };
+  const validUser = { email: 'john@example.com', password: 'Ecomm@123' };
   
   beforeEach(() => {
     cy.clearAllStorage();

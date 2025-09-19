@@ -1,7 +1,7 @@
 describe('🛒 Core Shopping - Cart & Checkout (Updated for Real App)', () => {
   const testUser = {
     email: 'john@example.com',
-    password: 'password123'
+    password: 'Ecomm@123'
   };
 
   before(() => {

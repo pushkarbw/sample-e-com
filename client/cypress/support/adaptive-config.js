@@ -6,7 +6,7 @@ const realAppConfig = {
   auth: {
     // Try multiple credential combinations that might exist
     testUsers: [
-      { email: 'test@example.com', password: 'password123' },
+      { email: 'test@example.com', password: 'Ecomm@123' },
       { email: 'user@example.com', password: 'password' },
       { email: 'demo@example.com', password: 'demo123' },
       { email: 'admin@localhost', password: 'admin' }

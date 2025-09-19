@@ -118,7 +118,7 @@ class SeleniumCommands {
   }
 
   // Authentication commands
-  async loginAsTestUser(email = 'test@example.com', password = 'password123') {
+  async loginAsTestUser(email = 'test@example.com', password = 'Ecomm@123') {
     await this.visit('/login');
     await this.type('#email', email);
     await this.type('#password', password);

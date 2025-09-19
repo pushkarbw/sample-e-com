@@ -3,7 +3,7 @@
 // ***********************************************
 
 // Authentication Commands
-Cypress.Commands.add('login', (email = 'test@example.com', password = 'password123') => {
+Cypress.Commands.add('login', (email = 'test@example.com', password = 'Ecomm@123') => {
   cy.session(
     [email, password],
     () => {

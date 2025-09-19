@@ -34,7 +34,7 @@ describe('API Client Service', () => {
 
   describe('Authentication', () => {
     it('should login user successfully', async () => {
-      const loginData = { email: 'test@example.com', password: 'password123' };
+      const loginData = { email: 'test@example.com', password: 'Ecomm@123' };
       const mockResponse = { user: mockUser, token: 'mock-token' };
       
       mockedApiClient.login.mockResolvedValueOnce(mockResponse);
@@ -57,7 +57,7 @@ describe('API Client Service', () => {
     it('should signup user successfully', async () => {
       const signupData = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Ecomm@123',
         firstName: 'John',
         lastName: 'Doe'
       };

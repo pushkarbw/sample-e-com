@@ -83,7 +83,7 @@ describe('🌐 Cross-Browser Compatibility', () => {
       
       // Test that form is functional
       cy.get('input[type="email"]').type('test@example.com');
-      cy.get('input[type="password"]').first().type('password123');
+      cy.get('input[type="password"]').first().type('Ecomm@123');
       
       cy.log('Input type compatibility test completed');
     });
@@ -99,7 +99,7 @@ describe('🌐 Cross-Browser Compatibility', () => {
       
       // Test email validation
       cy.get('input[type="email"]').type('test@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       
       cy.log('Form validation compatibility test completed');
@@ -109,7 +109,7 @@ describe('🌐 Cross-Browser Compatibility', () => {
       // Simple login first
       cy.visit('/login');
       cy.get('input[type="email"]').type('john@example.com');
-      cy.get('input[type="password"]').type('password123');
+      cy.get('input[type="password"]').type('Ecomm@123');
       cy.get('button[type="submit"]').click();
       
       // Wait for login to process

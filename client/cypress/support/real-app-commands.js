@@ -2,7 +2,7 @@
 import './commands';
 
 // Custom commands for e-commerce app testing
-Cypress.Commands.add('loginAsTestUser', (email = 'john@example.com', password = 'password123') => {
+Cypress.Commands.add('loginAsTestUser', (email = 'john@example.com', password = 'Ecomm@123') => {
   cy.log(`🔐 Logging in user: ${email}`);
   
   cy.visit('/login');

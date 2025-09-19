@@ -4,7 +4,7 @@
 describe('🏪 E-Commerce Application - Complete Test Suite', () => {
   const testConfig = {
     users: {
-      valid: { email: 'test@example.com', password: 'password123' },
+      valid: { email: 'test@example.com', password: 'Ecomm@123' },
       admin: { email: 'admin@example.com', password: 'admin123' },
       newUser: () => ({ 
         email: `test+${Date.now()}@example.com`, 
@@ -99,7 +99,7 @@ describe('🏪 E-Commerce Application - Complete Test Suite', () => {
 
     context('User Login & Session Management', () => {
       it('should login with valid credentials', () => {
-        cy.loginAsTestUser('john@example.com', 'password123');
+        cy.loginAsTestUser('john@example.com', 'Ecomm@123');
         cy.get('header').should('contain', 'Hi,');
         cy.url().should('not.include', '/login');
       });

@@ -1,7 +1,7 @@
 describe('4BDCF Device-Specific Browser Compatibility', () => {
   const testConfig = {
     users: {
-      valid: { email: 'john@example.com', password: 'password123' }
+      valid: { email: 'john@example.com', password: 'Ecomm@123' }
     }
   };
 

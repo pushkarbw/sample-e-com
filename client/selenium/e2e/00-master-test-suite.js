@@ -10,7 +10,7 @@ describe('🏪 E-Commerce Application - Complete Selenium Test Suite', function(
   
   const testConfig = {
     users: {
-      valid: { email: 'john@example.com', password: 'password123' },
+      valid: { email: 'john@example.com', password: 'Ecomm@123' },
       admin: { email: 'admin@example.com', password: 'admin123' },
       newUser: () => ({ 
         email: `test+${Date.now()}@example.com`, 

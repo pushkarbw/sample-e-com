@@ -3,7 +3,7 @@ describe('🔗 API Integration & Backend Communication', () => {
     apiBaseUrl: Cypress.env('API_BASE_URL') || 'http://localhost:3001/api',
     defaultUser: {
       email: 'john@example.com',
-      password: 'password123'
+      password: 'Ecomm@123'
     }
   };
 
